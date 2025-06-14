@@ -1,0 +1,56 @@
+/* 이 파일은 Login.tsx에만 적용됩니다 */
+.login-wrapper {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    background-color: #ffffff;
+    border: 1px solid #f97316;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+.login-wrapper h2 {
+    margin-bottom: 1.5rem;
+    color: #1f2937;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.login-form input {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background-color: #f9fafb;
+}
+
+.login-btn {
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: #f97316;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.login-btn:hover {
+    background-color: #ea580c;
+}
+
+.signup-btn {
+    margin-top: 1rem;
+    background: none;
+    border: none;
+    color: #f97316;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+}
