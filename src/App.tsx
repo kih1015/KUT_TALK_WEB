@@ -1,10 +1,15 @@
+import { Routes, Route } from 'react-router-dom';
 import Login from './Login';
-import './App.css';   // App 전용 스타일을 여기로 옮깁니다
+import Signup from './Signup';
+import './App.css';
 
 function App() {
     return (
         <div className="app-wrapper">
-            <Login />
+            <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+            </Routes>
         </div>
     );
 }

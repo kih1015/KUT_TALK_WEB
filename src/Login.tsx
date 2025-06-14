@@ -1,12 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Login.css';
 
 function Login() {
     const [form, setForm] = useState({ userid: '', password: '' });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -15,11 +15,8 @@ function Login() {
             alert('아이디와 비밀번호를 입력해주세요.');
             return;
         }
-        alert('로그인 시도');
-    };
-
-    const handleSignup = () => {
-        alert('회원가입으로 이동');
+        // TODO: 로그인 API 호출
+        alert('로그인 요청 완료');
     };
 
     return (
@@ -44,7 +41,12 @@ function Login() {
                 />
                 <button type="submit" className="login-btn">로그인</button>
             </form>
-            <button className="signup-btn" onClick={handleSignup}>회원가입</button>
+            <p>
+                아직 계정이 없으신가요?{' '}
+                <Link to="/signup" className="signup-link">
+                    회원가입
+                </Link>
+            </p>
         </div>
     );
 }

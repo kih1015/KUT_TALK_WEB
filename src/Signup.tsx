@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Signup.css';
 
 function Signup() {
@@ -9,22 +10,17 @@ function Signup() {
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        const { userid, nickname, password } = form;
-        if (!userid || !nickname || !password) {
+        if (!form.userid || !form.nickname || !form.password) {
             alert('모든 필드를 채워주세요.');
             return;
         }
-
-        // TODO: 실제 회원가입 API 호출
-        console.log('회원가입 데이터:', form);
-        alert('회원가입 요청이 전송되었습니다.');
+        // TODO: 회원가입 API 호출
+        alert('회원가입 요청 완료');
     };
 
     return (
@@ -55,10 +51,14 @@ function Signup() {
                     onChange={handleChange}
                     required
                 />
-                <button type="submit" className="signup-btn">
-                    가입하기
-                </button>
+                <button type="submit" className="signup-btn">가입하기</button>
             </form>
+            <p>
+                이미 계정이 있으신가요?{' '}
+                <Link to="/" className="login-link">
+                    로그인
+                </Link>
+            </p>
         </div>
     );
 }

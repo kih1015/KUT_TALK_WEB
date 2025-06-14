@@ -54,3 +54,18 @@
     cursor: pointer;
     text-decoration: underline;
 }
+
+/* 공통: 하단 링크 */
+.login-form + p,
+.signup-form + p {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #1f2937;
+}
+
+a.signup-link,
+a.login-link {
+    color: #f97316;
+    font-weight: bold;
+    text-decoration: underline;
+}
