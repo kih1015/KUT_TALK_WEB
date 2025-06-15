@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
-import Login from './Login';
-import Signup from './Signup';
+import Login from './pages/Login/Login.tsx';
+import Signup from './pages/Signup/Signup.tsx';
 import './App.css';
 
 function App() {
