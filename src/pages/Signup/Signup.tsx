@@ -1,8 +1,12 @@
+// src/pages/Signup/index.tsx
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSignup } from '../../hooks/useSignup';
 import './Signup.css';
 
 function Signup() {
+    const navigate = useNavigate();
+    const { signup, isLoading, error } = useSignup();
     const [form, setForm] = useState({
         userid: '',
         nickname: '',
@@ -13,14 +17,22 @@ function Signup() {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!form.userid || !form.nickname || !form.password) {
+        const { userid, nickname, password } = form;
+        if (!userid || !nickname || !password) {
             alert('모든 필드를 채워주세요.');
             return;
         }
-        // TODO: 회원가입 API 호출
-        alert('회원가입 요청 완료');
+
+        try {
+            await signup({ userid, nickname, password });
+            alert('회원가입 성공! 로그인 페이지로 이동합니다.');
+            navigate('/');
+        } catch {
+            // error 메시지는 hook 내부에서 설정됨
+            // 필요 시 추가 로직 가능
+        }
     };
 
     return (
@@ -33,6 +45,7 @@ function Signup() {
                     placeholder="아이디"
                     value={form.userid}
                     onChange={handleChange}
+                    disabled={isLoading}
                     required
                 />
                 <input
@@ -41,6 +54,7 @@ function Signup() {
                     placeholder="닉네임"
                     value={form.nickname}
                     onChange={handleChange}
+                    disabled={isLoading}
                     required
                 />
                 <input
@@ -49,11 +63,25 @@ function Signup() {
                     placeholder="비밀번호"
                     value={form.password}
                     onChange={handleChange}
+                    disabled={isLoading}
                     required
                 />
-                <button type="submit" className="signup-btn">가입하기</button>
+                <button
+                    type="submit"
+                    className="signup-btn"
+                    disabled={isLoading}
+                >
+                    {isLoading ? '가입 중…' : '가입하기'}
+                </button>
             </form>
-            <p>
+
+            {error && (
+                <p className="error-message">
+                    {error}
+                </p>
+            )}
+
+            <p className="redirect-text">
                 이미 계정이 있으신가요?{' '}
                 <Link to="/" className="login-link">
                     로그인

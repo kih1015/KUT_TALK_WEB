@@ -9,9 +9,19 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+      DEPLOY_HOST:       ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT:       ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USERNAME:   ${{ secrets.DEPLOY_USERNAME }}
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > .env
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,10 +42,14 @@ jobs:
 
       - name: Copy build files to server
         run: |
-          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }} -o StrictHostKeyChecking=no" \
-            ./dist/ ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:/home/ubuntu/
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT -o StrictHostKeyChecking=no" \
+            ./dist/ $DEPLOY_USERNAME@$DEPLOY_HOST:/home/ubuntu/
 
-      - name: Post-deploy SSH command (optional)
+      - name: Post-deploy SSH command
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }} -o StrictHostKeyChecking=no \
-            ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} "echo '✅ 배포 완료됨!'"
+          ssh -i ~/.ssh/deploy_key \
+            -p $DEPLOY_PORT \
+            -o StrictHostKeyChecking=no \
+            $DEPLOY_USERNAME@$DEPLOY_HOST \
+            "echo '✅ 배포 완료됨!'"
