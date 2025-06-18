@@ -29,7 +29,7 @@ function Login() {
             if (res.ok) {
                 // 쿠키 저장은 브라우저가 처리 → 필요하면 사용자 정보 가져오기
                 alert('로그인 성공!');
-                navigate('/');                 // 메인 페이지로 이동
+                navigate('/mypage');                // 메인 페이지로 이동
             } else if (res.status === 401) {
                 const { error } = await res.json();
                 alert(error || '아이디/비밀번호가 올바르지 않습니다.');

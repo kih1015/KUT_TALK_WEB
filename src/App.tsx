@@ -1,7 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
-import Login from './pages/Login/Login.tsx';
-import Signup from './pages/Signup/Signup.tsx';
+import Login from './pages/Login.tsx';
+import Signup from './pages/Signup.tsx';
 import './App.css';
+import MyPage from "./pages/MyPage.tsx";
 
 function App() {
     return (
@@ -9,6 +10,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/mypage" element={<MyPage />} />
             </Routes>
         </div>
     );
