@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import {useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
+import {useAuth} from "../auth.tsx";
 import './Login.css';
 
 function Login() {
-    const [form, setForm] = useState({ userid: '', password: '' });
+    const [form, setForm] = useState({userid: '', password: ''});
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const {refresh} = useAuth();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setForm(prev => ({...prev, [e.target.name]: e.target.value}));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,17 +23,17 @@ function Login() {
         try {
             const res = await fetch('https://api.kuttalk.kro.kr/users/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 credentials: 'include',        // ← 세션 쿠키 포함
                 body: JSON.stringify(form),
             });
 
             if (res.ok) {
-                // 쿠키 저장은 브라우저가 처리 → 필요하면 사용자 정보 가져오기
                 alert('로그인 성공!');
-                navigate('/mypage');                // 메인 페이지로 이동
+                refresh();            // 세션 정보 다시 가져오기
+                navigate('/mypage');  // 이동       // 메인 페이지로 이동
             } else if (res.status === 401) {
-                const { error } = await res.json();
+                const {error} = await res.json();
                 alert(error || '아이디/비밀번호가 올바르지 않습니다.');
             } else {
                 alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
