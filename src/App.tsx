@@ -13,10 +13,10 @@ function App() {
                 <Routes>
                     <Route path="/login" element={<Login/>}/>
                     <Route path="/signup" element={<Signup/>}/>
-                    <Route path="/mypage" element={
+                    <Route path="/chat" element={
                         <RequireAuth><MyPage/></RequireAuth>
                     }/>
-                    <Route path="/" element={<Navigate to="/mypage"/>}/>
+                    <Route path="/" element={<Navigate to="/chat"/>}/>
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
