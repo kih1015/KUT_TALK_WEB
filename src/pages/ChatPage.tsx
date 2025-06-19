@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ChatPage.css';
 
@@ -69,11 +69,26 @@ export default function ChatPage() {
     };
 
     /* ─ 공개방 참가 ─ */
-    const join = (id: number) =>
+    const joinRoom = (id: number) =>
         fetch(`${API}/chat/rooms/${id}/join`, {
             method: 'POST',
             credentials: 'include',
         }).then(loadRooms);
+
+    /* ─ 방 나가기 ─ */
+    const leaveRoom = (id: number, e: MouseEvent) => {
+        e.stopPropagation(); // 클릭 버블링 방지
+        if (!window.confirm('정말로 이 채팅방을 나가시겠습니까?')) return;
+
+        fetch(`${API}/chat/rooms/${id}/member`, {
+            method: 'DELETE',
+            credentials: 'include',
+        }).then(() => {
+            // 현재 보고 있던 방이면 중앙 화면 리셋
+            if (roomId === id) setRoomId(null);
+            loadRooms();
+        });
+    };
 
     if (!ready) return <div className="loading">Loading…</div>;
 
@@ -92,6 +107,13 @@ export default function ChatPage() {
                             <span className="avatar" />
                             <span className="title">{r.title}</span>
                             {r.unread > 0 && <span className="badge">{r.unread}</span>}
+                            <button
+                                className="leave"
+                                title="방 나가기"
+                                onClick={e => leaveRoom(r.room_id, e)}
+                            >
+                                ×
+                            </button>
                         </li>
                     ))}
                 </ul>
@@ -138,7 +160,7 @@ export default function ChatPage() {
                 {r.title} <small>({r.member_cnt})</small>
               </span>
                             {!myRooms.find(m => m.room_id === r.room_id) && (
-                                <button className="join" onClick={() => join(r.room_id)}>
+                                <button className="join" onClick={() => joinRoom(r.room_id)}>
                                     참가
                                 </button>
                             )}

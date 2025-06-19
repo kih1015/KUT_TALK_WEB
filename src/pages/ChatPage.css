@@ -29,7 +29,7 @@ body {
     display: grid;
     grid-template-columns: 260px 1fr 260px;
     height: 100%;
-    width: 100vw;      /* 좌우 여백 제거 */
+    width: 100vw;
     overflow: hidden;
 }
 
@@ -62,7 +62,7 @@ body {
     padding: 6px 14px;
     display: flex;
     align-items: center;
-    gap: 10px;               /* 아바타와 제목 사이 간격 */
+    gap: 10px;
     cursor: pointer;
     transition: background 0.15s;
 }
@@ -73,10 +73,10 @@ body {
     background: var(--accent-light);
 }
 .rooms .title {
-    flex: 1;
-    overflow: hidden;
     white-space: nowrap;
+    overflow: hidden;
     text-overflow: ellipsis;
+    flex: 1;
 }
 .badge {
     background: #f23f43;
@@ -85,17 +85,29 @@ body {
     padding: 1px 6px;
     border-radius: 9999px;
 }
-.join {
-    background: var(--accent);
-    color: white;
+.join,
+.leave {
     border: none;
     border-radius: var(--radius);
     font-size: 12px;
     padding: 2px 8px;
     cursor: pointer;
+    flex-shrink: 0;
+}
+.join {
+    background: var(--accent);
+    color: white;
 }
 .join:hover {
     background: var(--accent-light);
+}
+.leave {
+    background: #d84040;
+    color: white;
+    margin-left: 4px;
+}
+.leave:hover {
+    background: #b53030;
 }
 
 /* —— 기본 아바타 —— */
