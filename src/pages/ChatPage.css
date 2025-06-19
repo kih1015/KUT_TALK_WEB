@@ -1,165 +1,187 @@
-/* ===== 공통 변수 & reset ===== */
+/* —— 다크 테마 palette —— */
 :root {
-    --bg-body: #faf7f2;
-    --bg-panel: #ffffff;
-    --bg-hover: #f3f4f6;
-    --bg-primary: #10b981;
-    --bg-secondary: #3b82f6;
-    --border: #e5e7eb;
-    --radius: 10px;
-    --shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
-    --font-base: 15px;
+    --bg-main: #2b2d31;
+    --bg-panel: #1e1f22;
+    --bg-hover: #35363c;
+    --accent: #5865f2;
+    --accent-light: #4752c4;
+    --text: #f2f3f5;
+    --text-muted: #b5bac1;
+    --border: #3f4147;
+    --radius: 8px;
 }
 
-html, body {
-    height: 100%;
-}
-
+/* —— reset & base —— */
+html,
 body {
-    margin: 0;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: var(--font-base);
-    background: var(--bg-body);
-    color: #374151;
-}
-
-/* ===== 레이아웃 ===== */
-.chat-layout {
-    display: grid;
-    grid-template-columns: 280px 1fr 280px;
-    gap: 1.2rem;
     height: 100%;
-    padding: 1.2rem;
-    box-sizing: border-box;
+    margin: 0;
+}
+body {
+    font-family: 'Pretendard', 'Segoe UI', sans-serif;
+    background: var(--bg-main);
+    color: var(--text);
+    font-size: 15px;
 }
 
-/* ===== 패널 공통 ===== */
+/* —— 전체 3‑분할 —— */
+.layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 260px;
+    height: 100%;
+}
+
+/* —— 패널 공통 —— */
 .panel {
     background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    border-right: 1px solid var(--border);
 }
-
-/* 좌·우 사이드바 */
-.sidebar {
-    composes: panel;
+.right {
+    border-left: 1px solid var(--border);
+    border-right: none;
 }
-
-.sidebar-title {
-    margin: 0;
-    padding: 0.9rem 1rem;
-    border-bottom: 1px solid var(--border);
+.panel header {
+    padding: 12px 16px;
     font-weight: 600;
-    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
 }
 
-/* ===== 방 리스트 ===== */
-.room-list {
+/* —— 방 리스트 —— */
+.rooms {
     list-style: none;
     margin: 0;
-    padding: 0.4rem 0;
+    padding: 6px 0;
     overflow-y: auto;
     flex: 1;
 }
-
-.room-item {
-    padding: 0.55rem 1rem;
+.rooms li {
+    padding: 6px 16px;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: space-between;
     cursor: pointer;
     transition: background 0.15s;
 }
-
-.room-item:hover {
+.rooms li:hover {
     background: var(--bg-hover);
 }
-
-.room-item.active {
-    background: var(--bg-hover);
-    font-weight: 600;
+.rooms li.sel {
+    background: var(--accent-light);
 }
-
+.rooms .title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 .badge {
-    background: #ef4444;
-    color: #fff;
-    font-size: 0.68rem;
-    padding: 0 0.45rem;
+    background: #f23f43;
+    color: white;
+    font-size: 11px;
+    padding: 1px 6px;
     border-radius: 9999px;
-    line-height: 1.3;
 }
-
-/* ===== 새 공개방 입력 ===== */
-.new-room-form {
-    display: flex;
-    padding: 0.8rem 1rem;
-    border-top: 1px solid var(--border);
-    gap: 0.4rem;
-}
-
-.new-room-form input {
-    flex: 1;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.45rem 0.7rem;
-    font-size: 0.92rem;
-}
-
-.new-room-form button {
+.join {
+    background: var(--accent);
+    color: white;
     border: none;
-    background: var(--bg-primary);
-    color: #fff;
     border-radius: var(--radius);
-    padding: 0 0.9rem;
+    font-size: 12px;
+    padding: 2px 8px;
     cursor: pointer;
-    font-size: 1.1rem;
+}
+.join:hover {
+    background: var(--accent-light);
+}
+
+/* —— 새 방 입력 —— */
+.new {
+    display: flex;
+    padding: 10px 12px 14px;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+}
+.new input {
+    flex: 1;
+    background: var(--bg-hover);
+    border: none;
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    color: var(--text);
+}
+.new button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    width: 34px;
+    cursor: pointer;
+    font-size: 18px;
     line-height: 1;
 }
-
-.new-room-form button:hover {
-    opacity: 0.9;
+.new button:hover {
+    background: var(--accent-light);
 }
 
-/* ===== 공개방 참가 버튼 ===== */
-.join-btn {
-    background: var(--bg-secondary);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 0.78rem;
-    padding: 0.2rem 0.55rem;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.join-btn:hover {
-    opacity: 0.9;
-}
-
-/* ===== 중앙 채팅 메인 ===== */
-.chat-main {
-    composes: panel;
-    justify-content: center;
-    align-items: center;
+/* —— 중앙 채팅 —— */
+.chat {
     display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
 }
-
-.chat-placeholder {
-    color: #9ca3af;
-    font-size: 0.95rem;
+.chat-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+}
+.chat-header h2 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+.placeholder,
+.placeholder-center {
+    color: var(--text-muted);
+    font-size: 0.93rem;
     text-align: center;
 }
+.placeholder-center {
+    margin: auto;
+}
+.chat-input {
+    border-top: 1px solid var(--border);
+    padding: 14px 18px;
+}
+.chat-input input {
+    width: 100%;
+    background: var(--bg-hover);
+    border: none;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    color: var(--text);
+}
 
-/* ===== 스크롤바 살짝 꾸미기 (WebKit) ===== */
-.room-list::-webkit-scrollbar {
+/* —— 스크롤바 —— */
+.rooms::-webkit-scrollbar,
+.chat-body::-webkit-scrollbar {
     width: 6px;
 }
-.room-list::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+.rooms::-webkit-scrollbar-thumb,
+.chat-body::-webkit-scrollbar-thumb {
+    background: #555;
     border-radius: 3px;
+}
+
+/* —— 로딩 —— */
+.loading {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-muted);
 }

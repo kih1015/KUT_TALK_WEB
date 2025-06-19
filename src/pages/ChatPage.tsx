@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {type FormEvent, useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import './ChatPage.css';
 
-const API_BASE = 'https://api.kuttalk.kro.kr';
+const API = 'https://api.kuttalk.kro.kr';
 
 interface MyRoom {
     room_id: number;
@@ -20,78 +20,75 @@ interface PublicRoom {
 export default function ChatPage() {
     const nav = useNavigate();
 
-    /* ───────── 내 정보 & 로그인 체크 ───────── */
-    const [meChecked, setMeChecked] = useState(false);
+    /* ─ 로그인 체크 ─ */
+    const [ready, setReady] = useState(false);
     useEffect(() => {
-        fetch(`${API_BASE}/users/me`, { credentials: 'include' })
-            .then(res => (res.status === 401 ? null : res.json()))
-            .then(data => {
-                if (!data) nav('/login');
+        fetch(`${API}/users/me`, {credentials: 'include'})
+            .then(r => (r.status === 401 ? null : r.json()))
+            .then(d => {
+                if (!d) nav('/login');
             })
-            .finally(() => setMeChecked(true));
+            .finally(() => setReady(true));
     }, [nav]);
 
-    /* ───────── 채팅방 데이터 ───────── */
+    /* ─ 방 목록 ─ */
     const [myRooms, setMyRooms] = useState<MyRoom[]>([]);
-    const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
-    const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
+    const [pubRooms, setPubRooms] = useState<PublicRoom[]>([]);
+    const [roomId, setRoomId] = useState<number | null>(null);
 
-    const refreshLists = () => {
-        fetch(`${API_BASE}/chat/rooms/me`, { credentials: 'include' })
-            .then(res => res.json())
+    const loadRooms = () => {
+        fetch(`${API}/chat/rooms/me`, {credentials: 'include'})
+            .then(r => r.json())
             .then(setMyRooms);
-        fetch(`${API_BASE}/chat/rooms/public`, { credentials: 'include' })
-            .then(res => res.json())
-            .then(setPublicRooms);
+        fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
+            .then(r => r.json())
+            .then(setPubRooms);
     };
+    useEffect(loadRooms, []);
 
-    useEffect(refreshLists, []);
-
-    /* ───────── 채팅방 생성 ───────── */
+    /* ─ 새 방 만들기 ─ */
     const [newTitle, setNewTitle] = useState('');
     const createRoom = (e: FormEvent) => {
         e.preventDefault();
         if (!newTitle.trim()) return;
-
-        fetch(`${API_BASE}/chat/rooms`, {
+        fetch(`${API}/chat/rooms`, {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 room_type: 'PUBLIC',
                 title: newTitle.trim(),
-                member_ids: [], // 최초엔 본인만 참가
+                member_ids: [],
             }),
         })
-            .then(res => res.json())
-            .then(({ room_id }) => {
+            .then(r => r.json())
+            .then(({room_id}) => {
                 setNewTitle('');
-                refreshLists();
-                setSelectedRoom(room_id);
+                loadRooms();
+                setRoomId(room_id);
             });
     };
 
-    /* ───────── 공개방 참가 ───────── */
-    const joinRoom = (roomId: number) => {
-        fetch(`${API_BASE}/chat/rooms/${roomId}/join`, {
+    /* ─ 공개방 참가 ─ */
+    const join = (id: number) =>
+        fetch(`${API}/chat/rooms/${id}/join`, {
             method: 'POST',
             credentials: 'include',
-        }).then(() => refreshLists());
-    };
+        }).then(loadRooms);
 
-    if (!meChecked) return <div className="loading">로딩 중…</div>;
+    if (!ready) return <div className="loading">Loading…</div>;
 
     return (
-        <div className="chat-layout">
-            {/* ───────── 좌측: 내 채팅방 ───────── */}
-            <aside className="sidebar">
-                <h3 className="sidebar-title">내 채팅방</h3>
-                <ul className="room-list">
+        <div className="layout">
+            {/* —— 왼쪽: 내 방 —— */}
+            <aside className="panel left">
+                <header>내 채팅방</header>
+                <ul className="rooms">
                     {myRooms.map(r => (
                         <li
                             key={r.room_id}
-                            className={selectedRoom === r.room_id ? 'active' : undefined}
-                            onClick={() => setSelectedRoom(r.room_id)}
+                            className={roomId === r.room_id ? 'sel' : undefined}
+                            onClick={() => setRoomId(r.room_id)}
                         >
                             <span className="title">{r.title}</span>
                             {r.unread > 0 && <span className="badge">{r.unread}</span>}
@@ -99,40 +96,48 @@ export default function ChatPage() {
                     ))}
                 </ul>
 
-                <form onSubmit={createRoom} className="new-room-form">
+                <form onSubmit={createRoom} className="new">
                     <input
+                        placeholder="새 공개방 제목"
                         value={newTitle}
                         onChange={e => setNewTitle(e.target.value)}
-                        placeholder="새 공개방 제목"
                     />
-                    <button type="submit">＋</button>
+                    <button>＋</button>
                 </form>
             </aside>
 
-            {/* ───────── 중앙: 채팅 화면(placeholder) ───────── */}
-            <main className="chat-main">
-                {selectedRoom ? (
-                    <div className="chat-placeholder">
-                        <p>Room #{selectedRoom} 메시지 영역 (추후 WebSocket 연동)</p>
-                    </div>
+            {/* —— 중앙: 채팅 —— */}
+            <main className="chat">
+                {roomId ? (
+                    <>
+                        <div className="chat-header">
+                            <h2># {myRooms.find(r => r.room_id === roomId)?.title}</h2>
+                        </div>
+                        <div className="chat-body">
+                            <p className="placeholder">
+                                Room #{roomId} 메시지 영역<br/>(WebSocket 연동 예정)
+                            </p>
+                        </div>
+                        <form className="chat-input">
+                            <input placeholder="메시지를 입력하세요…" disabled/>
+                        </form>
+                    </>
                 ) : (
-                    <div className="chat-placeholder">
-                        <p>좌측에서 채팅방을 선택하세요.</p>
-                    </div>
+                    <p className="placeholder-center">좌측에서 방을 선택하세요.</p>
                 )}
             </main>
 
-            {/* ───────── 우측: 공개 채팅방 ───────── */}
-            <aside className="sidebar">
-                <h3 className="sidebar-title">공개 채팅방</h3>
-                <ul className="room-list">
-                    {publicRooms.map(r => (
+            {/* —— 오른쪽: 공개방 —— */}
+            <aside className="panel right">
+                <header>공개 채팅방</header>
+                <ul className="rooms">
+                    {pubRooms.map(r => (
                         <li key={r.room_id}>
               <span className="title">
                 {r.title} <small>({r.member_cnt})</small>
               </span>
                             {!myRooms.find(m => m.room_id === r.room_id) && (
-                                <button className="join-btn" onClick={() => joinRoom(r.room_id)}>
+                                <button className="join" onClick={() => join(r.room_id)}>
                                     참가
                                 </button>
                             )}
