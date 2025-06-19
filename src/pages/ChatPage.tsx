@@ -1,10 +1,17 @@
-import {type FormEvent, type MouseEvent, type UIEvent, useEffect, useRef, useState,} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {
+    useEffect,
+    useState,
+    type FormEvent,
+    type MouseEvent,
+    useRef,
+    type UIEvent,
+} from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
-const PAGE_SIZE = 20; // limit=20 고정
-const FIRST_SIZE = 0;
+const PAGE_SIZE = 20;
+const FIRST_PAGE = 0;
 
 /* ========= Type ========= */
 interface MyRoom {
@@ -13,21 +20,34 @@ interface MyRoom {
     unread: number;
     member_cnt: number;
 }
-
 interface PublicRoom {
     room_id: number;
     title: string;
     member_cnt: number;
 }
-
 interface Message {
     id: number;
     sender: number;
     sender_nick: string;
     content: string;
-    created_at: number;
+    created_at: number;   // unix epoch(sec)
     unread_cnt: number;
 }
+
+/* ========= Helpers ========= */
+const avatarUrl = (id: number) =>
+    // DiceBear 무료 아바타 (SVG) — 오프라인이면 <span className="avatar-fallback" />
+    `https://api.dicebear.com/6.x/identicon/svg?seed=${id}`;
+
+const formatTime = (ts: number) =>
+    new Date(ts * 1000).toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
 
 /* ========= Component ========= */
 export default function ChatPage() {
@@ -36,7 +56,7 @@ export default function ChatPage() {
     /* ─ 로그인 체크 ─ */
     const [ready, setReady] = useState(false);
     useEffect(() => {
-        fetch(`${API}/users/me`, {credentials: 'include'})
+        fetch(`${API}/users/me`, { credentials: 'include' })
             .then(r => (r.status === 401 ? null : r.json()))
             .then(d => {
                 if (!d) nav('/login');
@@ -50,10 +70,10 @@ export default function ChatPage() {
     const [roomId, setRoomId] = useState<number | null>(null);
 
     const loadRooms = () => {
-        fetch(`${API}/chat/rooms/me`, {credentials: 'include'})
+        fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
             .then(r => r.json())
             .then(setMyRooms);
-        fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
+        fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
             .then(r => r.json())
             .then(setPubRooms);
     };
@@ -67,7 +87,7 @@ export default function ChatPage() {
         fetch(`${API}/chat/rooms`, {
             method: 'POST',
             credentials: 'include',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 room_type: 'PUBLIC',
                 title: newTitle.trim(),
@@ -75,7 +95,7 @@ export default function ChatPage() {
             }),
         })
             .then(r => r.json())
-            .then(({room_id}) => {
+            .then(({ room_id }) => {
                 setNewTitle('');
                 loadRooms();
                 setRoomId(room_id);
@@ -104,7 +124,7 @@ export default function ChatPage() {
 
     /* ─ 메시지 무한 스크롤 ─ */
     const [messages, setMessages] = useState<Message[]>([]);
-    const [page, setPage] = useState(FIRST_SIZE);
+    const [page, setPage] = useState(FIRST_PAGE);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMsg, setLoadingMsg] = useState(false);
     const chatBodyRef = useRef<HTMLDivElement>(null);
@@ -113,15 +133,15 @@ export default function ChatPage() {
         setLoadingMsg(true);
         fetch(
             `${API}/chat/rooms/${room}/messages?page=${pageNo}&limit=${PAGE_SIZE}`,
-            {credentials: 'include'},
+            { credentials: 'include' },
         )
             .then(r => r.json())
             .then((data: Message[]) => {
                 setMessages(prev => [...data.reverse(), ...prev]); // 오래된 → 위쪽
                 setHasMore(data.length === PAGE_SIZE);
                 setPage(pageNo);
-                // 스크롤 점프 방지: 새 높이 계산
-                if (chatBodyRef.current && pageNo > 1) {
+                // 스크롤 위치 보정
+                if (chatBodyRef.current && pageNo > FIRST_PAGE) {
                     const diff =
                         chatBodyRef.current.scrollHeight - chatBodyRef.current.clientHeight;
                     chatBodyRef.current.scrollTop =
@@ -131,24 +151,23 @@ export default function ChatPage() {
             .finally(() => setLoadingMsg(false));
     };
 
-    /* 방 선택이 바뀌면 새로 로드 */
+    /* 방 선택이 바뀌면 초기 로드 */
     useEffect(() => {
         if (!roomId) {
             setMessages([]);
             return;
         }
         setMessages([]);
-        setPage(FIRST_SIZE);
+        setPage(FIRST_PAGE);
         setHasMore(true);
-        fetchMessages(roomId, FIRST_SIZE);
-        // 맨 밑으로 스크롤 (최신 메시지 보기)
+        fetchMessages(roomId, FIRST_PAGE);
         setTimeout(() => {
             if (chatBodyRef.current)
                 chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
         }, 0);
     }, [roomId]);
 
-    /* 스크롤 핸들러: 맨 위 도달 시 이전 페이지 로드 */
+    /* 스크롤 핸들러 */
     const onScroll = (e: UIEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
         if (target.scrollTop === 0 && hasMore && !loadingMsg && roomId) {
@@ -156,7 +175,7 @@ export default function ChatPage() {
         }
     };
 
-    /* 로딩 상태 */
+    /* ─── UI ─── */
     if (!ready) return <div className="loading">Loading…</div>;
 
     return (
@@ -171,7 +190,7 @@ export default function ChatPage() {
                             className={roomId === r.room_id ? 'sel' : undefined}
                             onClick={() => setRoomId(r.room_id)}
                         >
-                            <span className="avatar"/>
+                            <span className="avatar" />
                             <span className="title">{r.title}</span>
                             {r.unread > 0 && <span className="badge">{r.unread}</span>}
                             <button
@@ -209,8 +228,25 @@ export default function ChatPage() {
                             )}
                             {messages.map(m => (
                                 <div key={m.id} className="msg">
-                                    <span className="nick">{m.sender_nick}</span>
-                                    <span className="text">{m.content}</span>
+                                    {/** Avatar */}
+                                    <img
+                                        className="msg-avatar"
+                                        src={avatarUrl(m.sender)}
+                                        alt=""
+                                        onError={e =>
+                                            ((e.target as HTMLImageElement).style.display = 'none')
+                                        }
+                                    />
+                                    <div className="msg-body">
+                                        <div className="msg-meta">
+                                            <span className="nick">{m.sender_nick}</span>
+                                            <span className="time">{formatTime(m.created_at)}</span>
+                                            {m.unread_cnt > 0 && (
+                                                <span className="unread">{m.unread_cnt}</span>
+                                            )}
+                                        </div>
+                                        <div className="msg-text">{m.content}</div>
+                                    </div>
                                 </div>
                             ))}
                             {!messages.length && (
@@ -219,7 +255,7 @@ export default function ChatPage() {
                         </div>
 
                         <form className="chat-input">
-                            <input placeholder="메시지를 입력하세요…" disabled/>
+                            <input placeholder="메시지를 입력하세요…" disabled />
                         </form>
                     </>
                 ) : (
@@ -233,7 +269,7 @@ export default function ChatPage() {
                 <ul className="rooms">
                     {pubRooms.map(r => (
                         <li key={r.room_id}>
-                            <span className="avatar"/>
+                            <span className="avatar" />
                             <span className="title">
                 {r.title} <small>({r.member_cnt})</small>
               </span>
