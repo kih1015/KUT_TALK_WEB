@@ -4,6 +4,7 @@ import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
 const PAGE_SIZE = 20; // limit=20 고정
+const FIRST_SIZE = 0;
 
 /* ========= Type ========= */
 interface MyRoom {
@@ -103,7 +104,7 @@ export default function ChatPage() {
 
     /* ─ 메시지 무한 스크롤 ─ */
     const [messages, setMessages] = useState<Message[]>([]);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(FIRST_SIZE);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMsg, setLoadingMsg] = useState(false);
     const chatBodyRef = useRef<HTMLDivElement>(null);
@@ -137,9 +138,9 @@ export default function ChatPage() {
             return;
         }
         setMessages([]);
-        setPage(1);
+        setPage(FIRST_SIZE);
         setHasMore(true);
-        fetchMessages(roomId, 1);
+        fetchMessages(roomId, FIRST_SIZE);
         // 맨 밑으로 스크롤 (최신 메시지 보기)
         setTimeout(() => {
             if (chatBodyRef.current)
