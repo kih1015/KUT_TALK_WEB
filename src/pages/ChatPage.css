@@ -29,6 +29,8 @@ body {
     display: grid;
     grid-template-columns: 260px 1fr 260px;
     height: 100%;
+    width: 100vw;      /* 좌우 여백 제거 */
+    overflow: hidden;
 }
 
 /* —— 패널 공통 —— */
@@ -57,10 +59,10 @@ body {
     flex: 1;
 }
 .rooms li {
-    padding: 6px 16px;
+    padding: 6px 14px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;               /* 아바타와 제목 사이 간격 */
     cursor: pointer;
     transition: background 0.15s;
 }
@@ -71,6 +73,7 @@ body {
     background: var(--accent-light);
 }
 .rooms .title {
+    flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -93,6 +96,15 @@ body {
 }
 .join:hover {
     background: var(--accent-light);
+}
+
+/* —— 기본 아바타 —— */
+.avatar {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
 }
 
 /* —— 새 방 입력 —— */

@@ -1,5 +1,5 @@
-import {type FormEvent, useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
@@ -10,7 +10,6 @@ interface MyRoom {
     unread: number;
     member_cnt: number;
 }
-
 interface PublicRoom {
     room_id: number;
     title: string;
@@ -23,7 +22,7 @@ export default function ChatPage() {
     /* ─ 로그인 체크 ─ */
     const [ready, setReady] = useState(false);
     useEffect(() => {
-        fetch(`${API}/users/me`, {credentials: 'include'})
+        fetch(`${API}/users/me`, { credentials: 'include' })
             .then(r => (r.status === 401 ? null : r.json()))
             .then(d => {
                 if (!d) nav('/login');
@@ -37,10 +36,10 @@ export default function ChatPage() {
     const [roomId, setRoomId] = useState<number | null>(null);
 
     const loadRooms = () => {
-        fetch(`${API}/chat/rooms/me`, {credentials: 'include'})
+        fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
             .then(r => r.json())
             .then(setMyRooms);
-        fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
+        fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
             .then(r => r.json())
             .then(setPubRooms);
     };
@@ -54,7 +53,7 @@ export default function ChatPage() {
         fetch(`${API}/chat/rooms`, {
             method: 'POST',
             credentials: 'include',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 room_type: 'PUBLIC',
                 title: newTitle.trim(),
@@ -62,7 +61,7 @@ export default function ChatPage() {
             }),
         })
             .then(r => r.json())
-            .then(({room_id}) => {
+            .then(({ room_id }) => {
                 setNewTitle('');
                 loadRooms();
                 setRoomId(room_id);
@@ -90,6 +89,7 @@ export default function ChatPage() {
                             className={roomId === r.room_id ? 'sel' : undefined}
                             onClick={() => setRoomId(r.room_id)}
                         >
+                            <span className="avatar" />
                             <span className="title">{r.title}</span>
                             {r.unread > 0 && <span className="badge">{r.unread}</span>}
                         </li>
@@ -115,11 +115,11 @@ export default function ChatPage() {
                         </div>
                         <div className="chat-body">
                             <p className="placeholder">
-                                Room #{roomId} 메시지 영역<br/>(WebSocket 연동 예정)
+                                Room #{roomId} 메시지 영역<br />(WebSocket 연동 예정)
                             </p>
                         </div>
                         <form className="chat-input">
-                            <input placeholder="메시지를 입력하세요…" disabled/>
+                            <input placeholder="메시지를 입력하세요…" disabled />
                         </form>
                     </>
                 ) : (
@@ -133,7 +133,8 @@ export default function ChatPage() {
                 <ul className="rooms">
                     {pubRooms.map(r => (
                         <li key={r.room_id}>
-              <span className="title">
+                            <span className="avatar" />
+                            <span className="title">
                 {r.title} <small>({r.member_cnt})</small>
               </span>
                             {!myRooms.find(m => m.room_id === r.room_id) && (
