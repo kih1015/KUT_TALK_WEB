@@ -1,106 +1,165 @@
-/* 공통 레이아웃 */
+/* ===== 공통 변수 & reset ===== */
+:root {
+    --bg-body: #faf7f2;
+    --bg-panel: #ffffff;
+    --bg-hover: #f3f4f6;
+    --bg-primary: #10b981;
+    --bg-secondary: #3b82f6;
+    --border: #e5e7eb;
+    --radius: 10px;
+    --shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+    --font-base: 15px;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--font-base);
+    background: var(--bg-body);
+    color: #374151;
+}
+
+/* ===== 레이아웃 ===== */
 .chat-layout {
     display: grid;
-    grid-template-columns: 260px 1fr 260px;
-    height: 100vh;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 1.2rem;
+    height: 100%;
+    padding: 1.2rem;
+    box-sizing: border-box;
 }
 
-/* 사이드바 공통 */
+/* ===== 패널 공통 ===== */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 좌·우 사이드바 */
 .sidebar {
-    border-right: 1px solid #e5e7eb;
-    padding: 1rem;
-    overflow-y: auto;
-}
-.sidebar:last-child {
-    border-right: none;
-    border-left: 1px solid #e5e7eb;
-}
-.sidebar-title {
-    margin: 0 0 0.5rem;
-    font-size: 1.1rem;
-    font-weight: 600;
+    composes: panel;
 }
 
+.sidebar-title {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* ===== 방 리스트 ===== */
 .room-list {
     list-style: none;
-    padding: 0;
     margin: 0;
-}
-.room-list li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.4rem 0.6rem;
-    border-radius: 6px;
-    cursor: pointer;
-}
-.room-list li:hover,
-.room-list li.active {
-    background: #f3f4f6;
+    padding: 0.4rem 0;
+    overflow-y: auto;
+    flex: 1;
 }
 
-.room-list .title {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.room-item {
+    padding: 0.55rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.room-item:hover {
+    background: var(--bg-hover);
+}
+
+.room-item.active {
+    background: var(--bg-hover);
+    font-weight: 600;
 }
 
 .badge {
     background: #ef4444;
     color: #fff;
+    font-size: 0.68rem;
+    padding: 0 0.45rem;
     border-radius: 9999px;
-    font-size: 0.75rem;
-    padding: 0 0.5rem;
-    margin-left: 0.5rem;
+    line-height: 1.3;
 }
 
-/* 새 방 생성 */
+/* ===== 새 공개방 입력 ===== */
 .new-room-form {
     display: flex;
-    margin-top: 0.8rem;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--border);
+    gap: 0.4rem;
 }
+
 .new-room-form input {
     flex: 1;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px 0 0 6px;
-    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.45rem 0.7rem;
+    font-size: 0.92rem;
 }
+
 .new-room-form button {
     border: none;
-    background: #10b981;
+    background: var(--bg-primary);
     color: #fff;
-    border-radius: 0 6px 6px 0;
-    padding: 0 0.8rem;
+    border-radius: var(--radius);
+    padding: 0 0.9rem;
     cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
-/* 참가 버튼 */
+.new-room-form button:hover {
+    opacity: 0.9;
+}
+
+/* ===== 공개방 참가 버튼 ===== */
 .join-btn {
-    border: none;
-    background: #3b82f6;
+    background: var(--bg-secondary);
     color: #fff;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    padding: 0.2rem 0.5rem;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
-/* 중앙 영역 */
+.join-btn:hover {
+    opacity: 0.9;
+}
+
+/* ===== 중앙 채팅 메인 ===== */
 .chat-main {
-    display: flex;
-    align-items: center;
+    composes: panel;
     justify-content: center;
-}
-.chat-placeholder {
-    color: #6b7280;
-    font-size: 0.95rem;
+    align-items: center;
+    display: flex;
 }
 
-/* 로딩 상태 */
-.loading {
-    display: flex;
-    height: 100vh;
-    align-items: center;
-    justify-content: center;
+.chat-placeholder {
+    color: #9ca3af;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+/* ===== 스크롤바 살짝 꾸미기 (WebKit) ===== */
+.room-list::-webkit-scrollbar {
+    width: 6px;
+}
+.room-list::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
 }
