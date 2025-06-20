@@ -13,7 +13,6 @@ const API = 'https://api.kuttalk.kro.kr';
 const PAGE_SIZE = 20;
 const FIRST_PAGE = 0;
 
-/* ========= Type ========= */
 interface MyRoom {
     room_id: number;
     title: string;
@@ -34,7 +33,6 @@ interface Message {
     unread_cnt: number;
 }
 
-/* ========= Helpers ========= */
 const avatarUrl = (id: number) =>
     `https://api.dicebear.com/6.x/identicon/svg?seed=${id}`;
 const formatTime = (ts: number) =>
@@ -50,7 +48,7 @@ const formatTime = (ts: number) =>
 export default function ChatPage() {
     const nav = useNavigate();
 
-    /* ─ 로그인 체크 ─ */
+    // 로그인 체크
     const [ready, setReady] = useState(false);
     useEffect(() => {
         fetch(`${API}/users/me`, { credentials: 'include' })
@@ -61,11 +59,10 @@ export default function ChatPage() {
             .finally(() => setReady(true));
     }, [nav]);
 
-    /* ─ 방 목록 ─ */
+    // 방 목록
     const [myRooms, setMyRooms] = useState<MyRoom[]>([]);
     const [pubRooms, setPubRooms] = useState<PublicRoom[]>([]);
     const [roomId, setRoomId] = useState<number | null>(null);
-
     const loadRooms = () => {
         fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
             .then(r => r.json())
@@ -76,7 +73,7 @@ export default function ChatPage() {
     };
     useEffect(loadRooms, []);
 
-    /* ─ 새 방 만들기 ─ */
+    // 새 방 만들기
     const [newTitle, setNewTitle] = useState('');
     const createRoom = (e: FormEvent) => {
         e.preventDefault();
@@ -96,29 +93,38 @@ export default function ChatPage() {
                 setNewTitle('');
                 loadRooms();
                 setRoomId(room_id);
+                sendWs({ type: 'join', room: room_id });
             });
     };
 
-    /* ─ 참가 / 나가기 ─ */
+    // 참가 / 나가기
     const joinRoom = (id: number) =>
         fetch(`${API}/chat/rooms/${id}/join`, {
             method: 'POST',
             credentials: 'include',
-        }).then(loadRooms);
+        }).then(() => {
+            loadRooms();
+            setRoomId(id);
+            sendWs({ type: 'join', room: id });
+        });
 
     const leaveRoom = (id: number, e: MouseEvent) => {
         e.stopPropagation();
         if (!window.confirm('정말로 이 채팅방을 나가시겠습니까?')) return;
+
         fetch(`${API}/chat/rooms/${id}/member`, {
             method: 'DELETE',
             credentials: 'include',
         }).then(() => {
-            if (roomId === id) setRoomId(null);
+            if (roomId === id) {
+                sendWs({ type: 'leave', room: id });
+                setRoomId(null);
+            }
             loadRooms();
         });
     };
 
-    /* ─ 메시지 무한 스크롤 ─ */
+    // 메시지 무한 스크롤
     const [messages, setMessages] = useState<Message[]>([]);
     const [page, setPage] = useState(FIRST_PAGE);
     const [hasMore, setHasMore] = useState(true);
@@ -168,83 +174,56 @@ export default function ChatPage() {
         }
     };
 
-    /* ─ 웹소켓 연결 ─ */
+    // 웹소켓 연결 (페이지 로드 시 단 한 번만)
     const socketRef = useRef<WebSocket | null>(null);
-
     useEffect(() => {
-        if (!roomId) {
-            // 방 떠날 때
-            socketRef.current?.close();
-            socketRef.current = null;
-            return;
-        }
+        socketRef.current = new WebSocket(`wss://api.kuttalk.kro.kr/ws`);
 
-        const ws = new WebSocket(
-            'wss://api.kuttalk.kro.kr'
-        );
-        socketRef.current = ws;
-
-        ws.onopen = () => {
+        socketRef.current.onopen = () => {
             console.log('WebSocket 연결됨');
-            ws.send(JSON.stringify({ type: 'join', room: roomId }));
+            // 초기에는 아무 방에도 조인 안 함
         };
-
-        ws.onmessage = e => {
+        socketRef.current.onmessage = e => {
             const data = JSON.parse(e.data);
-            switch (data.type) {
-                case 'message':
-                    setMessages(prev => [...prev, data]);
-                    // 스크롤 맨 아래
-                    setTimeout(() => {
-                        if (chatBodyRef.current)
-                            chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-                    }, 0);
-                    break;
-                case 'unread':
-                    setMyRooms(rs =>
-                        rs.map(r =>
-                            r.room_id === data.room ? { ...r, unread: data.count } : r
-                        )
-                    );
-                    break;
-                case 'error':
-                    console.error('WebSocket 오류:', data.message);
-                    break;
-                // pong, joined 등 기타 이벤트는 필요시 처리
+            if (data.type === 'message' && data.room === roomId) {
+                // 현재 보고 있는 방이면
+                setMessages(prev => [...prev, data]);
+                setTimeout(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                    chatBodyRef.current &&
+                    (chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight);
+                }, 0);
+            } else if (data.type === 'unread') {
+                // 다른 방 메시지일 때
+                setMyRooms(rs =>
+                    rs.map(r =>
+                        r.room_id === data.room ? { ...r, unread: data.count } : r
+                    )
+                );
             }
         };
-
-        ws.onerror = err => {
-            console.error('WebSocket 에러:', err);
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket 연결 종료');
-        };
+        socketRef.current.onerror = console.error;
+        socketRef.current.onclose = () => console.log('WebSocket 종료');
 
         return () => {
-            ws.close();
+            socketRef.current?.close();
         };
-    }, [roomId]);
+    }, []);
 
-    /* ─ 메시지 전송 ─ */
-    const [newMsg, setNewMsg] = useState('');
-    const sendMessage = (content: string) => {
+    // ws로 객체 전송
+    const sendWs = (obj: any) => {
         const ws = socketRef.current;
-        if (ws && ws.readyState === WebSocket.OPEN && roomId) {
-            ws.send(
-                JSON.stringify({
-                    type: 'message',
-                    room: roomId,
-                    content,
-                })
-            );
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(obj));
         }
     };
+
+    // 메시지 전송
+    const [newMsg, setNewMsg] = useState('');
     const submitMessage = (e: FormEvent) => {
         e.preventDefault();
-        if (!newMsg.trim()) return;
-        sendMessage(newMsg.trim());
+        if (!newMsg.trim() || roomId == null) return;
+        sendWs({ type: 'message', room: roomId, content: newMsg.trim() });
         setNewMsg('');
     };
 
@@ -252,7 +231,7 @@ export default function ChatPage() {
 
     return (
         <div className="layout">
-            {/* 왼쪽 */}
+            {/* 왼쪽 패널 */}
             <aside className="panel left">
                 <header>내 채팅방</header>
                 <ul className="rooms">
@@ -260,7 +239,13 @@ export default function ChatPage() {
                         <li
                             key={r.room_id}
                             className={roomId === r.room_id ? 'sel' : undefined}
-                            onClick={() => setRoomId(r.room_id)}
+                            onClick={() => {
+                                if (roomId !== r.room_id) {
+                                    if (roomId != null) sendWs({ type: 'leave', room: roomId });
+                                    setRoomId(r.room_id);
+                                    sendWs({ type: 'join', room: r.room_id });
+                                }
+                            }}
                         >
                             <span className="avatar" />
                             <span className="title">{r.title}</span>
@@ -285,9 +270,9 @@ export default function ChatPage() {
                 </form>
             </aside>
 
-            {/* 중앙 */}
+            {/* 중앙 채팅 뷰 */}
             <main className="chat">
-                {roomId ? (
+                {roomId != null ? (
                     <>
                         <div className="chat-header">
                             <h2># {myRooms.find(r => r.room_id === roomId)?.title}</h2>
@@ -341,7 +326,7 @@ export default function ChatPage() {
                 )}
             </main>
 
-            {/* 오른쪽 */}
+            {/* 오른쪽 패널 */}
             <aside className="panel right">
                 <header>공개 채팅방</header>
                 <ul className="rooms">
