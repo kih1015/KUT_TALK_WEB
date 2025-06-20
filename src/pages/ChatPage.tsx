@@ -46,9 +46,8 @@ const formatTime = (ts: number) =>
         hour12: true,
     });
 
-// 로컬스토리지에서 sid 꺼내기
-const getSid = (): string =>
-    localStorage.getItem('KTA_SESSION_ID') ?? '';
+// localStorage에서 sid 꺼내기
+const getSid = (): string => localStorage.getItem('KTA_SESSION_ID') ?? '';
 
 export default function ChatPage() {
     const nav = useNavigate();
@@ -68,6 +67,11 @@ export default function ChatPage() {
     const [myRooms, setMyRooms] = useState<MyRoom[]>([]);
     const [pubRooms, setPubRooms] = useState<PublicRoom[]>([]);
     const [roomId, setRoomId] = useState<number | null>(null);
+    const roomIdRef = useRef<number | null>(null);
+    useEffect(() => {
+        roomIdRef.current = roomId;
+    }, [roomId]);
+
     const loadRooms = () => {
         fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
             .then(r => r.json())
@@ -78,7 +82,7 @@ export default function ChatPage() {
     };
     useEffect(loadRooms, []);
 
-    // 메시지 리스트 상태
+    // 메시지 리스트 & 무한 스크롤
     const [messages, setMessages] = useState<Message[]>([]);
     const [page, setPage] = useState(FIRST_PAGE);
     const [hasMore, setHasMore] = useState(true);
@@ -107,9 +111,8 @@ export default function ChatPage() {
             .finally(() => setLoadingMsg(false));
     };
 
-    // 방 전환 시 메시지 초기 로드
     useEffect(() => {
-        if (!roomId) {
+        if (roomId == null) {
             setMessages([]);
             return;
         }
@@ -119,33 +122,33 @@ export default function ChatPage() {
         fetchMessages(roomId, FIRST_PAGE);
         setTimeout(() => {
             if (chatBodyRef.current)
-                chatBodyRef.current.scrollTop =
-                    chatBodyRef.current.scrollHeight;
+                chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
         }, 0);
     }, [roomId]);
 
     const onScroll = (e: UIEvent<HTMLDivElement>) => {
         const tgt = e.currentTarget;
-        if (tgt.scrollTop === 0 && hasMore && !loadingMsg && roomId) {
+        if (tgt.scrollTop === 0 && hasMore && !loadingMsg && roomId != null) {
             fetchMessages(roomId, page + 1);
         }
     };
 
-    // websocket 연결 (한 번만)
+    // WebSocket 연결 (마운트 시 단 한번)
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
         const ws = new WebSocket(WS_URL);
         socketRef.current = ws;
 
-        ws.onopen = () => {
-            console.log('WebSocket 열림:', WS_URL);
-        };
+        ws.onopen = () => console.log('WebSocket 연결됨:', WS_URL);
         ws.onmessage = e => {
             const data = JSON.parse(e.data);
-            if (data.type === 'message' && data.room === roomId) {
-                // 메시지 수신 시 전체 재조회
-                if (roomId != null) {
-                    fetchMessages(roomId, FIRST_PAGE);
+            if (
+                data.type === 'message' &&
+                data.room === roomIdRef.current
+            ) {
+                // 메시지 받으면 전체 재조회
+                if (roomIdRef.current != null) {
+                    fetchMessages(roomIdRef.current, FIRST_PAGE);
                     setTimeout(() => {
                         if (chatBodyRef.current)
                             chatBodyRef.current.scrollTop =
@@ -155,22 +158,18 @@ export default function ChatPage() {
             } else if (data.type === 'unread') {
                 setMyRooms(rs =>
                     rs.map(r =>
-                        r.room_id === data.room
-                            ? { ...r, unread: data.count }
-                            : r
+                        r.room_id === data.room ? { ...r, unread: data.count } : r
                     )
                 );
             }
         };
         ws.onerror = e => console.error('WebSocket 에러:', e);
-        ws.onclose = () => console.log('WebSocket 닫힘');
+        ws.onclose = () => console.log('WebSocket 종료');
 
-        return () => {
-            ws.close();
-        };
-    }, [roomId]);
+        return () => ws.close();
+    }, []);
 
-    // 서버로 보내는 모든 페이로드에 sid 포함
+    // 모든 WS 페이로드에 sid 포함하여 전송
     const sendWs = (obj: object) => {
         const ws = socketRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -216,7 +215,7 @@ export default function ChatPage() {
         });
     const leaveRoom = (id: number, e: MouseEvent) => {
         e.stopPropagation();
-        if (!window.confirm('정말 나가시겠습니까?')) return;
+        if (!window.confirm('정말로 이 채팅방을 나가시겠습니까?')) return;
         fetch(`${API}/chat/rooms/${id}/member`, {
             method: 'DELETE',
             credentials: 'include',
@@ -242,7 +241,7 @@ export default function ChatPage() {
 
     return (
         <div className="layout">
-            {/* 왼쪽: 내 방 목록 */}
+            {/* 왼쪽: 내 채팅방 */}
             <aside className="panel left">
                 <header>내 채팅방</header>
                 <ul className="rooms">
@@ -252,8 +251,7 @@ export default function ChatPage() {
                             className={roomId === r.room_id ? 'sel' : undefined}
                             onClick={() => {
                                 if (roomId !== r.room_id) {
-                                    if (roomId != null)
-                                        sendWs({ type: 'leave', room: roomId });
+                                    if (roomId != null) sendWs({ type: 'leave', room: roomId });
                                     setRoomId(r.room_id);
                                     sendWs({ type: 'join', room: r.room_id });
                                 }
@@ -261,9 +259,7 @@ export default function ChatPage() {
                         >
                             <span className="avatar" />
                             <span className="title">{r.title}</span>
-                            {r.unread > 0 && (
-                                <span className="badge">{r.unread}</span>
-                            )}
+                            {r.unread > 0 && <span className="badge">{r.unread}</span>}
                             <button
                                 className="leave"
                                 onClick={e => leaveRoom(r.room_id, e)}
@@ -283,12 +279,14 @@ export default function ChatPage() {
                 </form>
             </aside>
 
-            {/* 중앙: 채팅 뷰 */}
+            {/* 중앙: 채팅 */}
             <main className="chat">
                 {roomId != null ? (
                     <>
                         <div className="chat-header">
-                            <h2># {myRooms.find(r => r.room_id === roomId)?.title}</h2>
+                            <h2>
+                                # {myRooms.find(r => r.room_id === roomId)?.title}
+                            </h2>
                         </div>
                         <div
                             className="chat-body"
@@ -307,16 +305,15 @@ export default function ChatPage() {
                                         src={avatarUrl(m.sender)}
                                         alt=""
                                         onError={e =>
-                                            ((e.target as HTMLImageElement).style.display =
-                                                'none')
+                                            ((e.target as HTMLImageElement).style.display = 'none')
                                         }
                                     />
                                     <div className="msg-body">
                                         <div className="msg-meta">
                                             <span className="nick">{m.sender_nick}</span>
                                             <span className="time">
-                                                {formatTime(m.created_at)}
-                                            </span>
+                        {formatTime(m.created_at)}
+                      </span>
                                             {m.unread_cnt > 0 && (
                                                 <span className="unread">{m.unread_cnt}</span>
                                             )}
@@ -342,7 +339,7 @@ export default function ChatPage() {
                 )}
             </main>
 
-            {/* 오른쪽: 공개 방 목록 */}
+            {/* 오른쪽: 공개 채팅방 */}
             <aside className="panel right">
                 <header>공개 채팅방</header>
                 <ul className="rooms">
@@ -350,8 +347,8 @@ export default function ChatPage() {
                         <li key={r.room_id}>
                             <span className="avatar" />
                             <span className="title">
-                                {r.title} <small>({r.member_cnt})</small>
-                            </span>
+                {r.title} <small>({r.member_cnt})</small>
+              </span>
                             {!myRooms.find(m => m.room_id === r.room_id) && (
                                 <button className="join" onClick={() => joinRoom(r.room_id)}>
                                     참가
