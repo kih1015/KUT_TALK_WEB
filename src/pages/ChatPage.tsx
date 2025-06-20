@@ -137,14 +137,13 @@ export default function ChatPage() {
         ws.onopen = () => console.log('WebSocket 연결됨:', WS_URL);
         ws.onmessage = e => {
             const data = JSON.parse(e.data);
-            if (
-                data.type === 'message' &&
-                data.room === roomIdRef.current
-            ) {
-                // 메시지 받으면 기존 내역 완전 교체
-                if (roomIdRef.current != null) {
-                    fetchMessages(roomIdRef.current, FIRST_PAGE);
-                }
+            if (data.type === 'message' && data.room === roomIdRef.current) {
+                // 소켓으로 수신한 메시지는 기존 배열에 추가
+                setMessages(prev => [...prev, data]);
+                setTimeout(() => {
+                    if (chatBodyRef.current)
+                        chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+                }, 0);
             } else if (data.type === 'unread') {
                 setMyRooms(rs =>
                     rs.map(r =>
@@ -158,6 +157,7 @@ export default function ChatPage() {
 
         return () => ws.close();
     }, []);
+
 
     // sendWs: 모든 페이로드에 sid 자동 포함
     const sendWs = (obj: object) => {
