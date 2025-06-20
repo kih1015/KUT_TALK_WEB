@@ -24,17 +24,22 @@ function Login() {
             const res = await fetch('https://api.kuttalk.kro.kr/users/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                credentials: 'include',        // ← 세션 쿠키 포함
+                credentials: 'include', // 쿠키도 포함
                 body: JSON.stringify(form),
             });
 
+            const data = await res.json();
+
             if (res.ok) {
+                // 서버가 { sid: "세션ID" } 형태로 내려준다고 가정
+                if (data.sid) {
+                    localStorage.setItem('KTA_SESSION_ID', data.sid);
+                }
                 alert('로그인 성공!');
-                refresh();            // 세션 정보 다시 가져오기
-                navigate('/mypage');  // 이동       // 메인 페이지로 이동
+                refresh();           // context 등에서 사용자 정보 다시 로드
+                navigate('/chat');   // 채팅 페이지로 이동
             } else if (res.status === 401) {
-                const {error} = await res.json();
-                alert(error || '아이디/비밀번호가 올바르지 않습니다.');
+                alert(data.error || '아이디/비밀번호가 올바르지 않습니다.');
             } else {
                 alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
             }

@@ -1,12 +1,5 @@
-import {
-    useEffect,
-    useState,
-    type FormEvent,
-    type MouseEvent,
-    useRef,
-    type UIEvent,
-} from 'react';
-import { useNavigate } from 'react-router-dom';
+import {type FormEvent, type MouseEvent, type UIEvent, useEffect, useRef, useState,} from 'react';
+import {useNavigate} from 'react-router-dom';
 import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
@@ -20,11 +13,13 @@ interface MyRoom {
     unread: number;
     member_cnt: number;
 }
+
 interface PublicRoom {
     room_id: number;
     title: string;
     member_cnt: number;
 }
+
 interface Message {
     id: number;
     sender: number;
@@ -46,12 +41,9 @@ const formatTime = (ts: number) =>
         hour12: true,
     });
 
-// 쿠키에서 KTA_SESSION_ID 값 꺼내기
-const getSidFromCookie = (): string =>
-    document.cookie
-        .split('; ')
-        .find(cookie => cookie.startsWith('KTA_SESSION_ID='))
-        ?.split('=')[1] ?? '';
+// 로컬스토리지에서 sid 꺼내기
+const getSid = (): string =>
+    localStorage.getItem('KTA_SESSION_ID') ?? '';
 
 export default function ChatPage() {
     const nav = useNavigate();
@@ -59,7 +51,7 @@ export default function ChatPage() {
     // 로그인 체크
     const [ready, setReady] = useState(false);
     useEffect(() => {
-        fetch(`${API}/users/me`, { credentials: 'include' })
+        fetch(`${API}/users/me`, {credentials: 'include'})
             .then(r => (r.status === 401 ? null : r.json()))
             .then(d => {
                 if (!d) nav('/login');
@@ -72,10 +64,10 @@ export default function ChatPage() {
     const [pubRooms, setPubRooms] = useState<PublicRoom[]>([]);
     const [roomId, setRoomId] = useState<number | null>(null);
     const loadRooms = () => {
-        fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
+        fetch(`${API}/chat/rooms/me`, {credentials: 'include'})
             .then(r => r.json())
             .then(setMyRooms);
-        fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
+        fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
             .then(r => r.json())
             .then(setPubRooms);
     };
@@ -89,7 +81,7 @@ export default function ChatPage() {
         fetch(`${API}/chat/rooms`, {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 room_type: 'PUBLIC',
                 title: newTitle.trim(),
@@ -97,11 +89,11 @@ export default function ChatPage() {
             }),
         })
             .then(r => r.json())
-            .then(({ room_id }) => {
+            .then(({room_id}) => {
                 setNewTitle('');
                 loadRooms();
                 setRoomId(room_id);
-                sendWs({ type: 'join', room: room_id });
+                sendWs({type: 'join', room: room_id});
             });
     };
 
@@ -113,7 +105,7 @@ export default function ChatPage() {
         }).then(() => {
             loadRooms();
             setRoomId(id);
-            sendWs({ type: 'join', room: id });
+            sendWs({type: 'join', room: id});
         });
 
     const leaveRoom = (id: number, e: MouseEvent) => {
@@ -125,7 +117,7 @@ export default function ChatPage() {
             credentials: 'include',
         }).then(() => {
             if (roomId === id) {
-                sendWs({ type: 'leave', room: id });
+                sendWs({type: 'leave', room: id});
                 setRoomId(null);
             }
             loadRooms();
@@ -143,7 +135,7 @@ export default function ChatPage() {
         setLoadingMsg(true);
         fetch(
             `${API}/chat/rooms/${room}/messages?page=${pageNo}&limit=${PAGE_SIZE}`,
-            { credentials: 'include' }
+            {credentials: 'include'}
         )
             .then(r => r.json())
             .then((data: Message[]) => {
@@ -187,7 +179,7 @@ export default function ChatPage() {
     // 웹소켓 연결 (페이지 로드 시 단 한 번만)
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
-        const sid = getSidFromCookie();
+        const sid = getSid();
         const wsUrl = `${WS_BASE}/ws/chat?sid=${encodeURIComponent(sid)}`;
         const ws = new WebSocket(wsUrl);
         socketRef.current = ws;
@@ -208,7 +200,7 @@ export default function ChatPage() {
                 setMyRooms(rs =>
                     rs.map(r =>
                         r.room_id === data.room
-                            ? { ...r, unread: data.count }
+                            ? {...r, unread: data.count}
                             : r
                     )
                 );
@@ -230,8 +222,8 @@ export default function ChatPage() {
     const sendWs = (obj: any) => {
         const ws = socketRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
-            const sid = getSidFromCookie();
-            ws.send(JSON.stringify({ ...obj, sid }));
+            const sid = getSid();
+            ws.send(JSON.stringify({...obj, sid}));
         }
     };
 
@@ -240,7 +232,7 @@ export default function ChatPage() {
     const submitMessage = (e: FormEvent) => {
         e.preventDefault();
         if (!newMsg.trim() || roomId == null) return;
-        sendWs({ type: 'message', room: roomId, content: newMsg.trim() });
+        sendWs({type: 'message', room: roomId, content: newMsg.trim()});
         setNewMsg('');
     };
 
@@ -258,13 +250,13 @@ export default function ChatPage() {
                             className={roomId === r.room_id ? 'sel' : undefined}
                             onClick={() => {
                                 if (roomId !== r.room_id) {
-                                    if (roomId != null) sendWs({ type: 'leave', room: roomId });
+                                    if (roomId != null) sendWs({type: 'leave', room: roomId});
                                     setRoomId(r.room_id);
-                                    sendWs({ type: 'join', room: r.room_id });
+                                    sendWs({type: 'join', room: r.room_id});
                                 }
                             }}
                         >
-                            <span className="avatar" />
+                            <span className="avatar"/>
                             <span className="title">{r.title}</span>
                             {r.unread > 0 && <span className="badge">{r.unread}</span>}
                             <button
@@ -348,7 +340,7 @@ export default function ChatPage() {
                 <ul className="rooms">
                     {pubRooms.map(r => (
                         <li key={r.room_id}>
-                            <span className="avatar" />
+                            <span className="avatar"/>
                             <span className="title">
                                 {r.title} <small>({r.member_cnt})</small>
                             </span>
