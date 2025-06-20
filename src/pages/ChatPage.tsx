@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
+const WS_BASE = API.replace(/^http/, 'ws'); // "wss://api.kuttalk.kro.kr"
 const PAGE_SIZE = 20;
 const FIRST_PAGE = 0;
 
@@ -44,6 +45,13 @@ const formatTime = (ts: number) =>
         minute: '2-digit',
         hour12: true,
     });
+
+// 쿠키에서 KTA_SESSION_ID 값 꺼내기
+const getSidFromCookie = (): string =>
+    document.cookie
+        .split('; ')
+        .find(cookie => cookie.startsWith('KTA_SESSION_ID='))
+        ?.split('=')[1] ?? '';
 
 export default function ChatPage() {
     const nav = useNavigate();
@@ -144,7 +152,8 @@ export default function ChatPage() {
                 setPage(pageNo);
                 if (chatBodyRef.current && pageNo > FIRST_PAGE) {
                     const diff =
-                        chatBodyRef.current.scrollHeight - chatBodyRef.current.clientHeight;
+                        chatBodyRef.current.scrollHeight -
+                        chatBodyRef.current.clientHeight;
                     chatBodyRef.current.scrollTop =
                         chatBodyRef.current.scrollHeight - diff;
                 }
@@ -163,7 +172,8 @@ export default function ChatPage() {
         fetchMessages(roomId, FIRST_PAGE);
         setTimeout(() => {
             if (chatBodyRef.current)
-                chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+                chatBodyRef.current.scrollTop =
+                    chatBodyRef.current.scrollHeight;
         }, 0);
     }, [roomId]);
 
@@ -177,44 +187,51 @@ export default function ChatPage() {
     // 웹소켓 연결 (페이지 로드 시 단 한 번만)
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
-        socketRef.current = new WebSocket(`wss://api.kuttalk.kro.kr/ws`);
+        const sid = getSidFromCookie();
+        const wsUrl = `${WS_BASE}/ws/chat?sid=${encodeURIComponent(sid)}`;
+        const ws = new WebSocket(wsUrl);
+        socketRef.current = ws;
 
-        socketRef.current.onopen = () => {
-            console.log('WebSocket 연결됨');
-            // 초기에는 아무 방에도 조인 안 함
+        ws.onopen = () => {
+            console.log('WebSocket 연결됨:', wsUrl);
         };
-        socketRef.current.onmessage = e => {
+        ws.onmessage = e => {
             const data = JSON.parse(e.data);
             if (data.type === 'message' && data.room === roomId) {
-                // 현재 보고 있는 방이면
                 setMessages(prev => [...prev, data]);
                 setTimeout(() => {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                    chatBodyRef.current &&
-                    (chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight);
+                    if (chatBodyRef.current)
+                        chatBodyRef.current.scrollTop =
+                            chatBodyRef.current.scrollHeight;
                 }, 0);
             } else if (data.type === 'unread') {
-                // 다른 방 메시지일 때
                 setMyRooms(rs =>
                     rs.map(r =>
-                        r.room_id === data.room ? { ...r, unread: data.count } : r
+                        r.room_id === data.room
+                            ? { ...r, unread: data.count }
+                            : r
                     )
                 );
             }
         };
-        socketRef.current.onerror = console.error;
-        socketRef.current.onclose = () => console.log('WebSocket 종료');
+        ws.onerror = e => {
+            console.error('WebSocket 에러:', e);
+        };
+        ws.onclose = () => {
+            console.log('WebSocket 연결 종료');
+        };
 
         return () => {
-            socketRef.current?.close();
+            ws.close();
         };
     }, []);
 
-    // ws로 객체 전송
+    // ws로 객체 전송 (여기에 sid 필드가 항상 붙습니다)
     const sendWs = (obj: any) => {
         const ws = socketRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(obj));
+            const sid = getSidFromCookie();
+            ws.send(JSON.stringify({ ...obj, sid }));
         }
     };
 
@@ -289,8 +306,7 @@ export default function ChatPage() {
                                 <div key={m.id} className="msg">
                                     <img
                                         className="msg-avatar"
-                                        src={avatarUrl(m.sender)}
-                                        alt=""
+                                        src={avatarUrl(m.sender)} alt=""
                                         onError={e =>
                                             ((e.target as HTMLImageElement).style.display = 'none')
                                         }
@@ -299,8 +315,8 @@ export default function ChatPage() {
                                         <div className="msg-meta">
                                             <span className="nick">{m.sender_nick}</span>
                                             <span className="time">
-                        {formatTime(m.created_at)}
-                      </span>
+                                                {formatTime(m.created_at)}
+                                            </span>
                                             {m.unread_cnt > 0 && (
                                                 <span className="unread">{m.unread_cnt}</span>
                                             )}
@@ -334,8 +350,8 @@ export default function ChatPage() {
                         <li key={r.room_id}>
                             <span className="avatar" />
                             <span className="title">
-                {r.title} <small>({r.member_cnt})</small>
-              </span>
+                                {r.title} <small>({r.member_cnt})</small>
+                            </span>
                             {!myRooms.find(m => m.room_id === r.room_id) && (
                                 <button
                                     className="join"
