@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
-const WS_BASE = API.replace(/^http/, 'ws'); // "wss://api.kuttalk.kro.kr"
+const WS_URL = API.replace(/^http/, 'ws'); // "wss://api.kuttalk.kro.kr"
 const PAGE_SIZE = 20;
 const FIRST_PAGE = 0;
 
@@ -78,7 +78,7 @@ export default function ChatPage() {
     };
     useEffect(loadRooms, []);
 
-    // 메시지 무한 스크롤 상태
+    // 메시지 리스트 상태
     const [messages, setMessages] = useState<Message[]>([]);
     const [page, setPage] = useState(FIRST_PAGE);
     const [hasMore, setHasMore] = useState(true);
@@ -107,7 +107,7 @@ export default function ChatPage() {
             .finally(() => setLoadingMsg(false));
     };
 
-    // 방 전환 시 초기 메시지 로드
+    // 방 전환 시 메시지 초기 로드
     useEffect(() => {
         if (!roomId) {
             setMessages([]);
@@ -131,22 +131,19 @@ export default function ChatPage() {
         }
     };
 
-    // 웹소켓 연결 (페이지 로드 시 단 한 번만)
+    // websocket 연결 (한 번만)
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
-        const sid = getSid();
-        const wsUrl = `${WS_BASE}/ws/chat?sid=${encodeURIComponent(sid)}`;
-        const ws = new WebSocket(wsUrl);
+        const ws = new WebSocket(WS_URL);
         socketRef.current = ws;
 
         ws.onopen = () => {
-            console.log('WebSocket 연결됨:', wsUrl);
+            console.log('WebSocket 열림:', WS_URL);
         };
         ws.onmessage = e => {
             const data = JSON.parse(e.data);
-
             if (data.type === 'message' && data.room === roomId) {
-                // 메시지를 받으면 API 재호출로 전체 리스트 갱신
+                // 메시지 수신 시 전체 재조회
                 if (roomId != null) {
                     fetchMessages(roomId, FIRST_PAGE);
                     setTimeout(() => {
@@ -166,21 +163,27 @@ export default function ChatPage() {
             }
         };
         ws.onerror = e => console.error('WebSocket 에러:', e);
-        ws.onclose = () => console.log('WebSocket 종료');
+        ws.onclose = () => console.log('WebSocket 닫힘');
 
-        return () => ws.close();
+        return () => {
+            ws.close();
+        };
     }, [roomId]);
 
-    // ws로 객체 전송 (항상 sid 포함)
-    const sendWs = (obj: any) => {
+    // 서버로 보내는 모든 페이로드에 sid 포함
+    const sendWs = (obj: object) => {
         const ws = socketRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
-            const sid = getSid();
-            ws.send(JSON.stringify({ ...obj, sid }));
+            ws.send(
+                JSON.stringify({
+                    ...obj,
+                    sid: getSid(),
+                })
+            );
         }
     };
 
-    // 새 방 만들기, 참가, 나가기
+    // 채팅방 생성 / 참가 / 나가기
     const [newTitle, setNewTitle] = useState('');
     const createRoom = (e: FormEvent) => {
         e.preventDefault();
@@ -213,7 +216,7 @@ export default function ChatPage() {
         });
     const leaveRoom = (id: number, e: MouseEvent) => {
         e.stopPropagation();
-        if (!window.confirm('정말로 이 채팅방을 나가시겠습니까?')) return;
+        if (!window.confirm('정말 나가시겠습니까?')) return;
         fetch(`${API}/chat/rooms/${id}/member`, {
             method: 'DELETE',
             credentials: 'include',
@@ -239,7 +242,7 @@ export default function ChatPage() {
 
     return (
         <div className="layout">
-            {/* 왼쪽 */}
+            {/* 왼쪽: 내 방 목록 */}
             <aside className="panel left">
                 <header>내 채팅방</header>
                 <ul className="rooms">
@@ -263,7 +266,6 @@ export default function ChatPage() {
                             )}
                             <button
                                 className="leave"
-                                title="방 나가기"
                                 onClick={e => leaveRoom(r.room_id, e)}
                             >
                                 ×
@@ -281,14 +283,12 @@ export default function ChatPage() {
                 </form>
             </aside>
 
-            {/* 중앙 */}
+            {/* 중앙: 채팅 뷰 */}
             <main className="chat">
                 {roomId != null ? (
                     <>
                         <div className="chat-header">
-                            <h2>
-                                # {myRooms.find(r => r.room_id === roomId)?.title}
-                            </h2>
+                            <h2># {myRooms.find(r => r.room_id === roomId)?.title}</h2>
                         </div>
                         <div
                             className="chat-body"
@@ -313,21 +313,15 @@ export default function ChatPage() {
                                     />
                                     <div className="msg-body">
                                         <div className="msg-meta">
-                                            <span className="nick">
-                                                {m.sender_nick}
-                                            </span>
+                                            <span className="nick">{m.sender_nick}</span>
                                             <span className="time">
                                                 {formatTime(m.created_at)}
                                             </span>
                                             {m.unread_cnt > 0 && (
-                                                <span className="unread">
-                                                    {m.unread_cnt}
-                                                </span>
+                                                <span className="unread">{m.unread_cnt}</span>
                                             )}
                                         </div>
-                                        <div className="msg-text">
-                                            {m.content}
-                                        </div>
+                                        <div className="msg-text">{m.content}</div>
                                     </div>
                                 </div>
                             ))}
@@ -335,10 +329,7 @@ export default function ChatPage() {
                                 <p className="placeholder">메시지가 없습니다.</p>
                             )}
                         </div>
-                        <form
-                            className="chat-input"
-                            onSubmit={submitMessage}
-                        >
+                        <form className="chat-input" onSubmit={submitMessage}>
                             <input
                                 placeholder="메시지를 입력하세요…"
                                 value={newMsg}
@@ -347,13 +338,11 @@ export default function ChatPage() {
                         </form>
                     </>
                 ) : (
-                    <p className="placeholder-center">
-                        좌측에서 방을 선택하세요.
-                    </p>
+                    <p className="placeholder-center">방을 선택하세요.</p>
                 )}
             </main>
 
-            {/* 오른쪽 */}
+            {/* 오른쪽: 공개 방 목록 */}
             <aside className="panel right">
                 <header>공개 채팅방</header>
                 <ul className="rooms">
@@ -364,10 +353,7 @@ export default function ChatPage() {
                                 {r.title} <small>({r.member_cnt})</small>
                             </span>
                             {!myRooms.find(m => m.room_id === r.room_id) && (
-                                <button
-                                    className="join"
-                                    onClick={() => joinRoom(r.room_id)}
-                                >
+                                <button className="join" onClick={() => joinRoom(r.room_id)}>
                                     참가
                                 </button>
                             )}
