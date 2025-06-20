@@ -136,18 +136,29 @@ export default function ChatPage() {
 
         ws.onopen = () => console.log('WebSocket 연결됨:', WS_URL);
         ws.onmessage = e => {
-            const data = JSON.parse(e.data);
-            if (data.type === 'message' && data.room === roomIdRef.current) {
-                // 소켓으로 수신한 메시지는 기존 배열에 추가
-                setMessages(prev => [...prev, data]);
+            const raw = JSON.parse(e.data);
+
+            if (raw.type === 'message' && raw.room === roomIdRef.current) {
+                // 1) raw.ts → created_at, raw.nick → sender_nick 으로 매핑
+                const newMsg: Message = {
+                    id: raw.id,
+                    sender: raw.sender,
+                    sender_nick: raw.nick,
+                    content: raw.content,
+                    created_at: raw.ts,    // formatTime 에서 *1000 해 줌
+                    unread_cnt: raw.unread_cnt ?? 0,
+                };
+
+                setMessages(prev => [...prev, newMsg]);
+                // 맨 아래로 스크롤
                 setTimeout(() => {
                     if (chatBodyRef.current)
                         chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
                 }, 0);
-            } else if (data.type === 'unread') {
+            } else if (raw.type === 'unread') {
                 setMyRooms(rs =>
                     rs.map(r =>
-                        r.room_id === data.room ? {...r, unread: data.count} : r
+                        r.room_id === raw.room ? {...r, unread: raw.count} : r
                     )
                 );
             }
