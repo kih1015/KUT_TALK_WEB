@@ -121,6 +121,12 @@ export default function ChatPage() {
         }, 0);
     }, [roomId]);
 
+    useEffect(() => {
+        if (page === FIRST_PAGE && chatBodyRef.current) {
+            chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+        }
+    }, [messages, page]);
+
     const onScroll = (e: UIEvent<HTMLDivElement>) => {
         const tgt = e.currentTarget;
         if (tgt.scrollTop === 0 && hasMore && !loadingMsg && roomId != null) {
@@ -128,7 +134,7 @@ export default function ChatPage() {
         }
     };
 
-    // WebSocket 연결 (마운트 시 단 한번)
+    // WebSocket 연결
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
         const ws = new WebSocket(WS_URL);
