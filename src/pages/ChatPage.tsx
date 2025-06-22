@@ -194,6 +194,18 @@ export default function ChatPage() {
         ws.onmessage = e => {
             const raw = JSON.parse(e.data);
 
+            // ── updated-message: 기존 메시지의 unread_cnt 갱신
+            if (raw.type === 'updated-message') {
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === raw.id
+                            ? {...m, unread_cnt: raw.unread_cnt}
+                            : m
+                    )
+                );
+                return;
+            }
+
             if (raw.type === 'auth_ok') {
                 // 인증 성공: user_id가 server에서 세션으로 확인됨
                 return;
