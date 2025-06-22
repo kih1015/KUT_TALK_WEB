@@ -1,5 +1,3 @@
-/* ChatPage.css */
-
 :root {
     --bg-main: #2b2d31;
     --bg-panel: #1e1f22;
@@ -16,9 +14,8 @@ html,
 body {
     height: 100%;
     margin: 0;
-    overflow: hidden;          /* 전체 페이지 스크롤 OFF */
+    overflow: hidden;
 }
-
 body {
     font-family: 'Pretendard', 'Segoe UI', sans-serif;
     background: var(--bg-main);
@@ -26,24 +23,56 @@ body {
     font-size: 15px;
 }
 
-/* —— 3‑분할 레이아웃 —— */
+/* 상단바 */
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 100;
+}
+.user-info {
+    color: var(--text);
+    font-size: 1rem;
+}
+.logout-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.logout-btn:hover {
+    background: var(--accent-light);
+}
+
+/* 레이아웃 */
 .layout {
     display: grid;
     grid-template-columns: 260px 1fr 260px;
-    grid-template-rows: 1fr;   /* 단일 행이 전체 높이를 채우게 */
-    height: 100vh;             /* 뷰포트 전체 높이 */
+    height: calc(100vh - 60px);
+    margin-top: 60px;
     width: 100vw;
     overflow: hidden;
 }
 
-/* —— 사이드 패널 —— */
+/* 사이드 패널 */
 .panel {
     background: var(--bg-panel);
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border);
-    overflow: hidden;          /* 내부에서 스크롤만 처리 */
-    min-height: 0;             /* 자식 overflow 컨테이너가 작동하도록 */
+    overflow: hidden;
+    min-height: 0;
 }
 .right {
     border-left: 1px solid var(--border);
@@ -55,7 +84,7 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
-/* —— 방 리스트 —— */
+/* 방 리스트 */
 .rooms {
     list-style: none;
     margin: 0;
@@ -115,55 +144,14 @@ body {
     background: #b53030;
 }
 
-/* —— 아바타 —— */
-.avatar,
-.msg-avatar {
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--accent);
-    object-fit: cover;
-}
-
-/* —— 새 방 입력 —— */
-.new {
-    display: flex;
-    padding: 10px 12px 14px;
-    gap: 6px;
-    border-top: 1px solid var(--border);
-}
-.new input {
-    flex: 1;
-    background: var(--bg-hover);
-    border: none;
-    border-radius: var(--radius);
-    padding: 6px 10px;
-    color: var(--text);
-}
-.new button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: var(--radius);
-    width: 34px;
-    cursor: pointer;
-    font-size: 18px;
-}
-.new button:hover {
-    background: var(--accent-light);
-}
-
-/* —— 중앙 채팅 영역 —— */
+/* 중앙 채팅 */
 .chat {
     display: flex;
     flex-direction: column;
     background: var(--bg-panel);
     overflow: hidden;
-    min-height: 0;            /* flex-child overflow 지원 */
+    min-height: 0;
 }
-
-/* 채팅 헤더 */
 .chat-header {
     padding: 12px 18px;
     border-bottom: 1px solid var(--border);
@@ -173,26 +161,20 @@ body {
     font-weight: 600;
     font-size: 1rem;
 }
-
-/* 오직 이 영역만 스크롤 */
 .chat-body {
-    flex: 1;                   /* header + input 사이 빈공간 차지 */
+    flex: 1;
     overflow-y: auto;
     padding: 20px 18px;
     display: flex;
     flex-direction: column;
     gap: 14px;
-    min-height: 0;             /* overflow 동작 위해 필수 */
+    min-height: 0;
 }
-
-/* 무한스크롤 로딩 텍스트 */
 .history-loading {
     text-align: center;
     color: var(--text-muted);
     font-size: 0.83rem;
 }
-
-/* 메시지 항목 */
 .msg {
     display: flex;
     gap: 10px;
@@ -226,8 +208,6 @@ body {
     white-space: pre-wrap;
     line-height: 1.45;
 }
-
-/* placeholder */
 .placeholder,
 .placeholder-center {
     color: var(--text-muted);
@@ -237,12 +217,10 @@ body {
 .placeholder-center {
     margin: auto;
 }
-
-/* —— 채팅 입력폼 —— */
 .chat-input {
     border-top: 1px solid var(--border);
     padding: 14px 18px;
-    flex-shrink: 0;            /* 항상 하단 고정 */
+    flex-shrink: 0;
 }
 .chat-input input {
     width: 100%;
@@ -253,7 +231,7 @@ body {
     color: var(--text);
 }
 
-/* —— 스크롤바 스타일 —— */
+/* 스크롤바 */
 .rooms::-webkit-scrollbar,
 .chat-body::-webkit-scrollbar {
     width: 6px;
@@ -264,7 +242,7 @@ body {
     border-radius: 3px;
 }
 
-/* —— 전체 로딩 화면 —— */
+/* 로딩 */
 .loading {
     display: flex;
     height: 100vh;
