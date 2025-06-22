@@ -411,12 +411,6 @@ export default function ChatPage() {
                                             ).then(() => {
                                                 loadRooms();
                                                 setRoomId(r.room_id);
-                                                // unread 초기화
-                                                setMyRooms(rs =>
-                                                    rs.map(x =>
-                                                        x.room_id === r.room_id ? {...x, unread: 0} : x
-                                                    )
-                                                );
                                                 sendWs({type: 'join', room: r.room_id});
                                             });
                                         }}

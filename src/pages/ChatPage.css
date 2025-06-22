@@ -273,8 +273,9 @@ body {
 
 /* 공개 방 참가 버튼 */
 button.join {
-    background: #fff;
-    color: #000000;
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-light);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 4px 8px;
@@ -282,16 +283,12 @@ button.join {
     cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-button.join:hover {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent-light);
-}
 
 /* 내 채팅방 나가기 버튼 */
 button.leave {
-    background: #fff;
-    color: #000000;
+    background: #d84040;
+    color: #fff;
+    border-color: #b53030;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 4px 8px;
@@ -299,9 +296,4 @@ button.leave {
     cursor: pointer;
     margin-left: auto;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-button.leave:hover {
-    background: #d84040;
-    color: #fff;
-    border-color: #b53030;
 }
