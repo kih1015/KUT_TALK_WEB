@@ -14,9 +14,8 @@ html,
 body {
     height: 100%;
     margin: 0;
-    overflow: hidden;
+    overflow: hidden; /* 전체 스크롤 제거 */
 }
-
 body {
     font-family: 'Pretendard', 'Segoe UI', sans-serif;
     background: var(--bg-main);
@@ -39,12 +38,10 @@ body {
     padding: 0 24px;
     z-index: 100;
 }
-
 .user-info {
     color: var(--text);
     font-size: 1rem;
 }
-
 .logout-btn {
     background: var(--accent);
     color: white;
@@ -54,12 +51,11 @@ body {
     cursor: pointer;
     font-size: 0.9rem;
 }
-
 .logout-btn:hover {
     background: var(--accent-light);
 }
 
-/* 레이아웃 */
+/* 3컬럼 레이아웃 */
 .layout {
     display: grid;
     grid-template-columns: 260px 1fr 260px;
@@ -78,19 +74,17 @@ body {
     overflow: hidden;
     min-height: 0;
 }
-
 .right {
     border-left: 1px solid var(--border);
     border-right: none;
 }
-
 .panel header {
     padding: 12px 16px;
     font-weight: 600;
     border-bottom: 1px solid var(--border);
 }
 
-/* 방 리스트 */
+/* 채팅방 리스트 */
 .rooms {
     list-style: none;
     margin: 0;
@@ -98,66 +92,63 @@ body {
     overflow-y: auto;
     flex: 1;
 }
-
 .rooms li {
-    padding: 6px 14px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    padding: 8px 16px;      /* 항목 높이 및 패딩 조정 */
+    gap: 8px;
+    min-height: 40px;
     cursor: pointer;
     transition: background 0.15s;
+    font-size: 0.95rem;
 }
-
 .rooms li:hover {
     background: var(--bg-hover);
 }
-
 .rooms li.sel {
     background: var(--accent-light);
 }
-
 .rooms .title {
     flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-
 .badge {
-    background: #f23f43;
-    color: white;
+    font-size: 10px;
+    padding: 1px 5px;
+}
+.join, .leave {
     font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 9999px;
+    padding: 2px 6px;
 }
 
-.join,
-.leave {
+/* 새 방 생성 폼 */
+.new {
+    display: flex;
+    padding: 10px 12px 14px;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+}
+.new input {
+    flex: 1;
+    background: var(--bg-hover);
     border: none;
     border-radius: var(--radius);
-    font-size: 12px;
-    padding: 2px 8px;
-    cursor: pointer;
-    flex-shrink: 0;
+    padding: 6px 10px;
+    color: var(--text);
 }
-
-.join {
+.new button {
     background: var(--accent);
     color: white;
+    border: none;
+    border-radius: var(--radius);
+    width: 34px;
+    cursor: pointer;
+    font-size: 18px;
 }
-
-.join:hover {
+.new button:hover {
     background: var(--accent-light);
-}
-
-.leave {
-    background: #d84040;
-    color: white;
-    margin-left: 4px;
-}
-
-.leave:hover {
-    background: #b53030;
 }
 
 /* 중앙 채팅 */
@@ -168,18 +159,15 @@ body {
     overflow: hidden;
     min-height: 0;
 }
-
 .chat-header {
     padding: 12px 18px;
     border-bottom: 1px solid var(--border);
 }
-
 .chat-header h2 {
     margin: 0;
     font-weight: 600;
     font-size: 1rem;
 }
-
 .chat-body {
     flex: 1;
     overflow-y: auto;
@@ -189,25 +177,21 @@ body {
     gap: 14px;
     min-height: 0;
 }
-
 .history-loading {
     text-align: center;
     color: var(--text-muted);
     font-size: 0.83rem;
 }
-
 .msg {
     display: flex;
     gap: 10px;
 }
-
 .msg-body {
     display: flex;
     flex-direction: column;
     gap: 4px;
     width: 100%;
 }
-
 .msg-meta {
     display: flex;
     align-items: center;
@@ -215,12 +199,10 @@ body {
     font-size: 0.8rem;
     color: var(--text-muted);
 }
-
 .msg-meta .nick {
     color: var(--text);
     font-weight: 600;
 }
-
 .msg-meta .unread {
     background: #f23f43;
     color: #fff;
@@ -229,35 +211,43 @@ body {
     padding: 0 6px;
     margin-left: auto;
 }
-
+/* 아바타 축소 */
+.avatar,
+.msg-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    object-fit: cover;
+}
 .msg-text {
     white-space: pre-wrap;
     line-height: 1.45;
 }
-
 .placeholder,
 .placeholder-center {
     color: var(--text-muted);
     font-size: 0.93rem;
     text-align: center;
 }
-
 .placeholder-center {
     margin: auto;
 }
 
+/* 메시지 입력창 */
 .chat-input {
     border-top: 1px solid var(--border);
     padding: 14px 18px;
     flex-shrink: 0;
 }
-
 .chat-input input {
     width: 100%;
+    height: 44px;       /* 높이 조정 */
+    font-size: 1rem;    /* 폰트 크기 조정 */
     background: var(--bg-hover);
     border: none;
     border-radius: var(--radius);
-    padding: 10px 14px;
+    padding: 0 14px;
     color: var(--text);
 }
 
@@ -266,28 +256,17 @@ body {
 .chat-body::-webkit-scrollbar {
     width: 6px;
 }
-
 .rooms::-webkit-scrollbar-thumb,
 .chat-body::-webkit-scrollbar-thumb {
     background: #555;
     border-radius: 3px;
 }
 
-/* 로딩 */
+/* 로딩 화면 */
 .loading {
     display: flex;
     height: 100vh;
     justify-content: center;
     align-items: center;
     color: var(--text-muted);
-}
-
-.avatar,
-.msg-avatar {
-    flex-shrink: 0;
-    width: 24px; /* 32px → 24px */
-    height: 24px; /* 32px → 24px */
-    border-radius: 50%;
-    background: var(--accent);
-    object-fit: cover;
 }
