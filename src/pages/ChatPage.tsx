@@ -29,7 +29,6 @@ interface Message {
     sender_nick: string;
     content: string;
     created_at: number;
-    // 더 이상 화면에 표시하지 않으므로 unused
     unread_cnt: number;
 }
 
@@ -118,6 +117,7 @@ export default function ChatPage() {
                     )
                 );
                 sendWs({type: 'join', room: room_id});
+                sendWs({type: 'update-chat-room'});
                 setNewTitle('');
             });
     };
@@ -203,6 +203,14 @@ export default function ChatPage() {
                             : m
                     )
                 );
+                return;
+            }
+
+            if (raw.type === 'updated-chat-room') {
+                // 공용방 리스트만 새로고침
+                fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
+                    .then(r => r.json())
+                    .then(setPubRooms);
                 return;
             }
 
@@ -336,6 +344,7 @@ export default function ChatPage() {
                                                     setRoomId(null);
                                                 }
                                                 loadRooms();
+                                                sendWs({type: 'update-chat-room'});
                                             });
                                         }
                                     }}
@@ -434,6 +443,7 @@ export default function ChatPage() {
                                                 loadRooms();
                                                 setRoomId(r.room_id);
                                                 sendWs({type: 'join', room: r.room_id});
+                                                sendWs({type: 'update-chat-room'});
                                             });
                                         }}
                                     >
