@@ -107,6 +107,12 @@ export default function ChatPage() {
     };
 
     useEffect(() => {
+        const el = chatBodyRef.current;
+        if (!el) return;
+        el.scrollTop = el.scrollHeight;
+    }, [messages]);
+
+    useEffect(() => {
         if (roomId == null) {
             setMessages([]);
             return;
@@ -137,6 +143,7 @@ export default function ChatPage() {
     // WebSocket 연결
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
+
         const ws = new WebSocket(WS_URL);
         socketRef.current = ws;
 
@@ -156,11 +163,6 @@ export default function ChatPage() {
                 };
 
                 setMessages(prev => [...prev, newMsg]);
-                // 맨 아래로 스크롤
-                setTimeout(() => {
-                    if (chatBodyRef.current)
-                        chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-                }, 0);
             } else if (raw.type === 'unread') {
                 setMyRooms(rs =>
                     rs.map(r =>
