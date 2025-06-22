@@ -1,12 +1,5 @@
-import {
-    type FormEvent,
-    type MouseEvent,
-    type UIEvent,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
-import { useNavigate } from 'react-router-dom';
+import {type FormEvent, type MouseEvent, type UIEvent, useEffect, useRef, useState,} from 'react';
+import {useNavigate} from 'react-router-dom';
 import './ChatPage.css';
 
 const API = 'https://api.kuttalk.kro.kr';
@@ -23,17 +16,20 @@ interface MyRoom {
     unread: number;
     member_cnt: number;
 }
+
 interface PublicRoom {
     room_id: number;
     title: string;
     member_cnt: number;
 }
+
 interface Message {
     id: number;
     sender: number;
     sender_nick: string;
     content: string;
     created_at: number;
+    // 더 이상 화면에 표시하지 않으므로 unused
     unread_cnt: number;
 }
 
@@ -57,7 +53,7 @@ export default function ChatPage() {
     const [ready, setReady] = useState(false);
     const [user, setUser] = useState<{ nickname: string } | null>(null);
     useEffect(() => {
-        fetch(`${API}/users/me`, { credentials: 'include' })
+        fetch(`${API}/users/me`, {credentials: 'include'})
             .then(r => (r.status === 401 ? null : r.json()))
             .then(d => {
                 if (!d) return nav('/login');
@@ -86,10 +82,10 @@ export default function ChatPage() {
     }, [roomId]);
 
     const loadRooms = () => {
-        fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
+        fetch(`${API}/chat/rooms/me`, {credentials: 'include'})
             .then(r => r.json())
             .then(setMyRooms);
-        fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
+        fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
             .then(r => r.json())
             .then(setPubRooms);
     };
@@ -103,7 +99,7 @@ export default function ChatPage() {
         fetch(`${API}/chat/rooms`, {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 room_type: 'PUBLIC',
                 title: newTitle.trim(),
@@ -111,10 +107,17 @@ export default function ChatPage() {
             }),
         })
             .then(r => r.json())
-            .then(({ room_id }) => {
+            .then(({room_id}) => {
                 loadRooms();
+                // 생성 후 바로 join
                 setRoomId(room_id);
-                sendWs({ type: 'join', room: room_id });
+                // unread 초기화
+                setMyRooms(rs =>
+                    rs.map(r =>
+                        r.room_id === room_id ? {...r, unread: 0} : r
+                    )
+                );
+                sendWs({type: 'join', room: room_id});
                 setNewTitle('');
             });
     };
@@ -130,13 +133,14 @@ export default function ChatPage() {
         setLoadingMsg(true);
         fetch(
             `${API}/chat/rooms/${room}/messages?page=${pageNo}&limit=${PAGE_SIZE}`,
-            { credentials: 'include' }
+            {credentials: 'include'}
         )
             .then(r => r.json())
             .then((data: Message[]) => {
                 setMessages(prev => [...data.reverse(), ...prev]);
                 setHasMore(data.length === PAGE_SIZE);
                 setPage(pageNo);
+                // 이전 페이지 로드 시 스크롤 위치 보존
                 if (chatBodyRef.current && pageNo > FIRST_PAGE) {
                     const diff =
                         chatBodyRef.current.scrollHeight -
@@ -156,6 +160,7 @@ export default function ChatPage() {
         fetchMessages(roomId, FIRST_PAGE);
     }, [roomId]);
 
+    // 새 메시지나 페이지 로드 후 항상 스크롤 최하단
     useEffect(() => {
         if (!chatBodyRef.current) return;
         chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
@@ -175,7 +180,6 @@ export default function ChatPage() {
 
     // — WebSocket & Heartbeat —
     const socketRef = useRef<WebSocket | null>(null);
-    // 마지막 pong 수신 시점
     const lastPongRef = useRef<number>(Date.now());
 
     useEffect(() => {
@@ -183,26 +187,25 @@ export default function ChatPage() {
         socketRef.current = ws;
 
         ws.onopen = () => {
-            console.log('WS open');
             lastPongRef.current = Date.now();
         };
 
         ws.onmessage = e => {
             const raw = JSON.parse(e.data);
 
-            // 서버가 보낸 ping → pong 으로 응답
+            // 서버 ping → pong 응답, 타임스탬프 갱신
             if (raw.type === 'ping') {
-                sendWs({ type: 'pong' });
+                sendWs({type: 'pong'});
                 lastPongRef.current = Date.now();
                 return;
             }
-            // 서버가 보낸 pong → 타임스탬프 갱신
+            // 서버가 보낸 pong(선택) → 타임스탬프 갱신
             if (raw.type === 'pong') {
                 lastPongRef.current = Date.now();
                 return;
             }
 
-            // 일반 메시지 처리
+            // 일반 메시지
             if (
                 raw.type === 'message' &&
                 raw.room === roomIdRef.current
@@ -217,26 +220,23 @@ export default function ChatPage() {
                 };
                 setMessages(prev => [...prev, newMsg]);
             } else if (raw.type === 'unread') {
+                // unread 카운트 갱신
                 setMyRooms(rs =>
                     rs.map(r =>
                         r.room_id === raw.room
-                            ? { ...r, unread: raw.count }
+                            ? {...r, unread: raw.count}
                             : r
                     )
                 );
             }
         };
 
-        ws.onerror = e => console.error(e);
-        ws.onclose = () => console.log('WS closed');
-
-        // pong 타임아웃 체크: 서버가 ping을 보내면 반드시 이 시간 내에 pong 응답해야 함
         const timeoutId = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                if (Date.now() - lastPongRef.current > APP_PONG_TIMEOUT) {
-                    console.warn('서버 pong 응답 타임아웃, WS 연결 종료');
-                    ws.close();
-                }
+            if (
+                ws.readyState === WebSocket.OPEN &&
+                Date.now() - lastPongRef.current > APP_PONG_TIMEOUT
+            ) {
+                ws.close();
             }
         }, APP_PONG_TIMEOUT / 2);
 
@@ -249,7 +249,7 @@ export default function ChatPage() {
     const sendWs = (obj: object) => {
         const ws = socketRef.current;
         if (ws?.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ ...obj, sid: getSid() }));
+            ws.send(JSON.stringify({...obj, sid: getSid()}));
         }
     };
 
@@ -258,7 +258,7 @@ export default function ChatPage() {
     const submitMessage = (e: FormEvent) => {
         e.preventDefault();
         if (!newMsg.trim() || roomId == null) return;
-        sendWs({ type: 'message', room: roomId, content: newMsg.trim() });
+        sendWs({type: 'message', room: roomId, content: newMsg.trim()});
         setNewMsg('');
     };
 
@@ -287,14 +287,21 @@ export default function ChatPage() {
                                 className={roomId === r.room_id ? 'sel' : undefined}
                                 onClick={() => {
                                     if (roomId !== r.room_id) {
-                                        if (roomId != null)
-                                            sendWs({ type: 'leave', room: roomId });
+                                        // 1) leave 이전 방
+                                        if (roomId != null) sendWs({type: 'leave', room: roomId});
+                                        // 2) enter 새 방
                                         setRoomId(r.room_id);
-                                        sendWs({ type: 'join', room: r.room_id });
+                                        // unread 초기화
+                                        setMyRooms(rs =>
+                                            rs.map(x =>
+                                                x.room_id === r.room_id ? {...x, unread: 0} : x
+                                            )
+                                        );
+                                        sendWs({type: 'join', room: r.room_id});
                                     }
                                 }}
                             >
-                                <span className="avatar" />
+                                <span className="avatar"/>
                                 <span className="title">{r.title}</span>
                                 {r.unread > 0 && <span className="badge">{r.unread}</span>}
                                 <button
@@ -304,10 +311,10 @@ export default function ChatPage() {
                                         if (window.confirm('나가시겠습니까?')) {
                                             fetch(
                                                 `${API}/chat/rooms/${r.room_id}/member`,
-                                                { method: 'DELETE', credentials: 'include' }
+                                                {method: 'DELETE', credentials: 'include'}
                                             ).then(() => {
                                                 if (roomId === r.room_id) {
-                                                    sendWs({ type: 'leave', room: r.room_id });
+                                                    sendWs({type: 'leave', room: r.room_id});
                                                     setRoomId(null);
                                                 }
                                                 loadRooms();
@@ -334,8 +341,8 @@ export default function ChatPage() {
                     {roomId != null ? (
                         <>
                             <div className="chat-header">
-                                <h2>#{' '}
-                                    {myRooms.find(r => r.room_id === roomId)?.title}
+                                <h2>
+                                    # {myRooms.find(r => r.room_id === roomId)?.title}
                                 </h2>
                             </div>
                             <div
@@ -362,9 +369,7 @@ export default function ChatPage() {
                                                 <span className="time">
                           {formatTime(m.created_at)}
                         </span>
-                                                {m.unread_cnt > 0 && (
-                                                    <span className="unread">{m.unread_cnt}</span>
-                                                )}
+                                                {/* 메시지별 unread은 표시하지 않습니다 */}
                                             </div>
                                             <div className="msg-text">{m.content}</div>
                                         </div>
@@ -392,7 +397,7 @@ export default function ChatPage() {
                     <ul className="rooms">
                         {pubRooms.map(r => (
                             <li key={r.room_id}>
-                                <span className="avatar" />
+                                <span className="avatar"/>
                                 <span className="title">
                   {r.title} <small>({r.member_cnt})</small>
                 </span>
@@ -402,11 +407,17 @@ export default function ChatPage() {
                                         onClick={() => {
                                             fetch(
                                                 `${API}/chat/rooms/${r.room_id}/join`,
-                                                { method: 'POST', credentials: 'include' }
+                                                {method: 'POST', credentials: 'include'}
                                             ).then(() => {
                                                 loadRooms();
                                                 setRoomId(r.room_id);
-                                                sendWs({ type: 'join', room: r.room_id });
+                                                // unread 초기화
+                                                setMyRooms(rs =>
+                                                    rs.map(x =>
+                                                        x.room_id === r.room_id ? {...x, unread: 0} : x
+                                                    )
+                                                );
+                                                sendWs({type: 'join', room: r.room_id});
                                             });
                                         }}
                                     >
