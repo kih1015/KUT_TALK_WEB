@@ -14,6 +14,10 @@ const WS_URL = API.replace(/^http/, 'ws');
 const PAGE_SIZE = 20;
 const FIRST_PAGE = 0;
 
+// heartbeat intervals (ms)
+const APP_PING_INTERVAL = 30_000;
+const APP_PONG_TIMEOUT  = 10_000;
+
 interface MyRoom {
     room_id: number;
     title: string;
@@ -92,7 +96,7 @@ export default function ChatPage() {
     };
     useEffect(loadRooms, []);
 
-    // 새 방 생성
+    // — 새 방 생성 —
     const [newTitle, setNewTitle] = useState('');
     const createRoom = (e: FormEvent) => {
         e.preventDefault();
@@ -145,7 +149,6 @@ export default function ChatPage() {
             .finally(() => setLoadingMsg(false));
     };
 
-    // 방 변경 → 초기 로드
     useEffect(() => {
         if (roomId == null) return setMessages([]);
         setMessages([]);
@@ -154,13 +157,11 @@ export default function ChatPage() {
         fetchMessages(roomId, FIRST_PAGE);
     }, [roomId]);
 
-    // messages 변경 → 스크롤 최하단
     useEffect(() => {
         if (!chatBodyRef.current) return;
         chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }, [messages]);
 
-    // 스크롤 이벤트 → 무한 로드
     const onScroll = (e: UIEvent<HTMLDivElement>) => {
         const tgt = e.currentTarget;
         if (
@@ -173,14 +174,35 @@ export default function ChatPage() {
         }
     };
 
-    // — WebSocket —
+    // — WebSocket & Heartbeat —
     const socketRef = useRef<WebSocket | null>(null);
+    // track last time we got an app-level pong
+    const lastPongRef = useRef<number>(Date.now());
+
     useEffect(() => {
         const ws = new WebSocket(WS_URL);
         socketRef.current = ws;
-        ws.onopen = () => console.log('WS open');
+
+        ws.onopen = () => {
+            console.log('WS open');
+            lastPongRef.current = Date.now();
+        };
+
         ws.onmessage = e => {
             const raw = JSON.parse(e.data);
+
+            // app-level ping from server → respond with pong
+            if (raw.type === 'ping') {
+                sendWs({ type: 'pong' });
+                return;
+            }
+            // app-level pong response → update timestamp
+            if (raw.type === 'pong') {
+                lastPongRef.current = Date.now();
+                return;
+            }
+
+            // normal chat message
             if (
                 raw.type === 'message' &&
                 raw.room === roomIdRef.current
@@ -204,9 +226,26 @@ export default function ChatPage() {
                 );
             }
         };
+
         ws.onerror = e => console.error(e);
         ws.onclose = () => console.log('WS closed');
-        return () => ws.close();
+
+        // send app-level pings and check for pong timeout
+        const intervalId = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                sendWs({ type: 'ping' });
+                // if we haven't received a pong in APP_PONG_TIMEOUT, close
+                if (Date.now() - lastPongRef.current > APP_PONG_TIMEOUT) {
+                    console.warn('Pong timeout, closing WS');
+                    ws.close();
+                }
+            }
+        }, APP_PING_INTERVAL);
+
+        return () => {
+            clearInterval(intervalId);
+            ws.close();
+        };
     }, []);
 
     const sendWs = (obj: object) => {
@@ -283,7 +322,6 @@ export default function ChatPage() {
                             </li>
                         ))}
                     </ul>
-                    {/* 새 방 생성 폼 */}
                     <form onSubmit={createRoom} className="new">
                         <input
                             placeholder="새 공개방 제목"
@@ -298,8 +336,7 @@ export default function ChatPage() {
                     {roomId != null ? (
                         <>
                             <div className="chat-header">
-                                <h2>
-                                    #{' '}
+                                <h2>#{' '}
                                     {myRooms.find(r => r.room_id === roomId)?.title}
                                 </h2>
                             </div>
