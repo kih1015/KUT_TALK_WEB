@@ -1,0 +1,25 @@
+.mypage-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 5rem;
+    color: #333;          /* ★ 글자색 어둡게 */
+}
+
+.mypage-wrapper h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #000;          /* 제목 진하게 */
+}
+
+.logout-btn {
+    margin-top: 2rem;
+    padding: 0.6rem 1.4rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #ff6b6b;
+    color: #fff;
+    cursor: pointer;
+}
+.logout-btn:hover { opacity: 0.9; }

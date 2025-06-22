@@ -29,11 +29,12 @@
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     background-color: #f9fafb;
-    color: #1f2937;
+    color: #1f2937;           /* 추가: 입력 텍스트 색상 */
 }
 
+/* placeholder 색상도 조정하고 싶다면 */
 .signup-form input::placeholder {
-    color: #9ca3af;
+    color: #9ca3af;           /* 연한 회색으로 예시 */
 }
 
 
