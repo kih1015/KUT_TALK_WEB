@@ -188,10 +188,16 @@ export default function ChatPage() {
 
         ws.onopen = () => {
             lastPongRef.current = Date.now();
+            sendWs({ type: 'auth' });
         };
 
         ws.onmessage = e => {
             const raw = JSON.parse(e.data);
+
+            if (raw.type === 'auth_ok') {
+                // 인증 성공: user_id가 server에서 세션으로 확인됨
+                return;
+            }
 
             // 서버 ping → pong 응답, 타임스탬프 갱신
             if (raw.type === 'ping') {
