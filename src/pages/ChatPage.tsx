@@ -193,6 +193,7 @@ export default function ChatPage() {
             // 서버가 보낸 ping → pong 으로 응답
             if (raw.type === 'ping') {
                 sendWs({ type: 'pong' });
+                lastPongRef.current = Date.now();
                 return;
             }
             // 서버가 보낸 pong → 타임스탬프 갱신
