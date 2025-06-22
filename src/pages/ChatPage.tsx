@@ -14,9 +14,8 @@ const WS_URL = API.replace(/^http/, 'ws');
 const PAGE_SIZE = 20;
 const FIRST_PAGE = 0;
 
-// heartbeat intervals (ms)
-const APP_PING_INTERVAL = 30_000;
-const APP_PONG_TIMEOUT  = 10_000;
+// pong timeout (ms): 서버가 보낸 ping에 응답해야 할 최대 시간
+const APP_PONG_TIMEOUT = 10_000;
 
 interface MyRoom {
     room_id: number;
@@ -176,7 +175,7 @@ export default function ChatPage() {
 
     // — WebSocket & Heartbeat —
     const socketRef = useRef<WebSocket | null>(null);
-    // track last time we got an app-level pong
+    // 마지막 pong 수신 시점
     const lastPongRef = useRef<number>(Date.now());
 
     useEffect(() => {
@@ -191,18 +190,18 @@ export default function ChatPage() {
         ws.onmessage = e => {
             const raw = JSON.parse(e.data);
 
-            // app-level ping from server → respond with pong
+            // 서버가 보낸 ping → pong 으로 응답
             if (raw.type === 'ping') {
                 sendWs({ type: 'pong' });
                 return;
             }
-            // app-level pong response → update timestamp
+            // 서버가 보낸 pong → 타임스탬프 갱신
             if (raw.type === 'pong') {
                 lastPongRef.current = Date.now();
                 return;
             }
 
-            // normal chat message
+            // 일반 메시지 처리
             if (
                 raw.type === 'message' &&
                 raw.room === roomIdRef.current
@@ -230,20 +229,18 @@ export default function ChatPage() {
         ws.onerror = e => console.error(e);
         ws.onclose = () => console.log('WS closed');
 
-        // send app-level pings and check for pong timeout
-        const intervalId = setInterval(() => {
+        // pong 타임아웃 체크: 서버가 ping을 보내면 반드시 이 시간 내에 pong 응답해야 함
+        const timeoutId = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
-                sendWs({ type: 'ping' });
-                // if we haven't received a pong in APP_PONG_TIMEOUT, close
                 if (Date.now() - lastPongRef.current > APP_PONG_TIMEOUT) {
-                    console.warn('Pong timeout, closing WS');
+                    console.warn('서버 pong 응답 타임아웃, WS 연결 종료');
                     ws.close();
                 }
             }
-        }, APP_PING_INTERVAL);
+        }, APP_PONG_TIMEOUT / 2);
 
         return () => {
-            clearInterval(intervalId);
+            clearInterval(timeoutId);
             ws.close();
         };
     }, []);
