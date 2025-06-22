@@ -309,7 +309,7 @@ body {
 /* 공개 방 참가 버튼 */
 button.join {
     background: #fff;
-    color: var(--text);
+    color: #000000;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 4px 8px;
@@ -326,7 +326,7 @@ button.join:hover {
 /* 내 채팅방 나가기 버튼 */
 button.leave {
     background: #fff;
-    color: var(--text);
+    color: #000000;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 4px 8px;
