@@ -188,7 +188,7 @@ export default function ChatPage() {
 
         ws.onopen = () => {
             lastPongRef.current = Date.now();
-            sendWs({ type: 'auth' });
+            sendWs({type: 'auth'});
         };
 
         ws.onmessage = e => {
@@ -375,7 +375,11 @@ export default function ChatPage() {
                                                 <span className="time">
                           {formatTime(m.created_at)}
                         </span>
-                                                {/* 메시지별 unread은 표시하지 않습니다 */}
+                                                {m.unread_cnt > 0 && (
+                                                    <span className="msg-unread-badge">
+                        {m.unread_cnt}
+                        </span>
+                                                )}
                                             </div>
                                             <div className="msg-text">{m.content}</div>
                                         </div>
