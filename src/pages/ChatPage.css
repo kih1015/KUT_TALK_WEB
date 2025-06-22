@@ -12,12 +12,11 @@
     --radius: 8px;
 }
 
-/* —— 전체 페이지 고정, 스크롤 제거 —— */
 html,
 body {
     height: 100%;
     margin: 0;
-    overflow: hidden;
+    overflow: hidden;          /* 전체 페이지 스크롤 OFF */
 }
 
 body {
@@ -31,18 +30,20 @@ body {
 .layout {
     display: grid;
     grid-template-columns: 260px 1fr 260px;
-    height: 100vh;      /* 화면 전체 높이 */
+    grid-template-rows: 1fr;   /* 단일 행이 전체 높이를 채우게 */
+    height: 100vh;             /* 뷰포트 전체 높이 */
     width: 100vw;
+    overflow: hidden;
 }
 
-/* —— 왼쪽/오른쪽 패널 —— */
+/* —— 사이드 패널 —— */
 .panel {
     background: var(--bg-panel);
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border);
-    height: 100%;       /* layout 높이에 맞춤 */
-    overflow: hidden;    /* 내부 전체 스크롤 방지 */
+    overflow: hidden;          /* 내부에서 스크롤만 처리 */
+    min-height: 0;             /* 자식 overflow 컨테이너가 작동하도록 */
 }
 .right {
     border-left: 1px solid var(--border);
@@ -125,7 +126,7 @@ body {
     object-fit: cover;
 }
 
-/* —— 새 방 생성 폼 —— */
+/* —— 새 방 입력 —— */
 .new {
     display: flex;
     padding: 10px 12px 14px;
@@ -158,7 +159,8 @@ body {
     display: flex;
     flex-direction: column;
     background: var(--bg-panel);
-    height: 100%;      /* layout 높이에 맞춤 */
+    overflow: hidden;
+    min-height: 0;            /* flex-child overflow 지원 */
 }
 
 /* 채팅 헤더 */
@@ -172,14 +174,15 @@ body {
     font-size: 1rem;
 }
 
-/* 채팅 메시지 영역 (스크롤 가능) */
+/* 오직 이 영역만 스크롤 */
 .chat-body {
-    flex: 1;               /* header/input 사이 남은 공간 */
-    overflow-y: auto;      /* 오직 이곳만 세로 스크롤 */
+    flex: 1;                   /* header + input 사이 빈공간 차지 */
+    overflow-y: auto;
     padding: 20px 18px;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-height: 0;             /* overflow 동작 위해 필수 */
 }
 
 /* 무한스크롤 로딩 텍스트 */
@@ -189,7 +192,7 @@ body {
     font-size: 0.83rem;
 }
 
-/* 메시지 스타일 */
+/* 메시지 항목 */
 .msg {
     display: flex;
     gap: 10px;
@@ -239,7 +242,7 @@ body {
 .chat-input {
     border-top: 1px solid var(--border);
     padding: 14px 18px;
-    flex-shrink: 0;       /* input 영역 고정 */
+    flex-shrink: 0;            /* 항상 하단 고정 */
 }
 .chat-input input {
     width: 100%;
