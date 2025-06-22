@@ -16,6 +16,7 @@ body {
     margin: 0;
     overflow: hidden;
 }
+
 body {
     font-family: 'Pretendard', 'Segoe UI', sans-serif;
     background: var(--bg-main);
@@ -38,10 +39,12 @@ body {
     padding: 0 24px;
     z-index: 100;
 }
+
 .user-info {
     color: var(--text);
     font-size: 1rem;
 }
+
 .logout-btn {
     background: var(--accent);
     color: white;
@@ -51,6 +54,7 @@ body {
     cursor: pointer;
     font-size: 0.9rem;
 }
+
 .logout-btn:hover {
     background: var(--accent-light);
 }
@@ -74,10 +78,12 @@ body {
     overflow: hidden;
     min-height: 0;
 }
+
 .right {
     border-left: 1px solid var(--border);
     border-right: none;
 }
+
 .panel header {
     padding: 12px 16px;
     font-weight: 600;
@@ -92,6 +98,7 @@ body {
     overflow-y: auto;
     flex: 1;
 }
+
 .rooms li {
     padding: 6px 14px;
     display: flex;
@@ -100,18 +107,22 @@ body {
     cursor: pointer;
     transition: background 0.15s;
 }
+
 .rooms li:hover {
     background: var(--bg-hover);
 }
+
 .rooms li.sel {
     background: var(--accent-light);
 }
+
 .rooms .title {
     flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
 .badge {
     background: #f23f43;
     color: white;
@@ -119,6 +130,7 @@ body {
     padding: 1px 6px;
     border-radius: 9999px;
 }
+
 .join,
 .leave {
     border: none;
@@ -128,18 +140,22 @@ body {
     cursor: pointer;
     flex-shrink: 0;
 }
+
 .join {
     background: var(--accent);
     color: white;
 }
+
 .join:hover {
     background: var(--accent-light);
 }
+
 .leave {
     background: #d84040;
     color: white;
     margin-left: 4px;
 }
+
 .leave:hover {
     background: #b53030;
 }
@@ -152,15 +168,18 @@ body {
     overflow: hidden;
     min-height: 0;
 }
+
 .chat-header {
     padding: 12px 18px;
     border-bottom: 1px solid var(--border);
 }
+
 .chat-header h2 {
     margin: 0;
     font-weight: 600;
     font-size: 1rem;
 }
+
 .chat-body {
     flex: 1;
     overflow-y: auto;
@@ -170,21 +189,25 @@ body {
     gap: 14px;
     min-height: 0;
 }
+
 .history-loading {
     text-align: center;
     color: var(--text-muted);
     font-size: 0.83rem;
 }
+
 .msg {
     display: flex;
     gap: 10px;
 }
+
 .msg-body {
     display: flex;
     flex-direction: column;
     gap: 4px;
     width: 100%;
 }
+
 .msg-meta {
     display: flex;
     align-items: center;
@@ -192,10 +215,12 @@ body {
     font-size: 0.8rem;
     color: var(--text-muted);
 }
+
 .msg-meta .nick {
     color: var(--text);
     font-weight: 600;
 }
+
 .msg-meta .unread {
     background: #f23f43;
     color: #fff;
@@ -204,24 +229,29 @@ body {
     padding: 0 6px;
     margin-left: auto;
 }
+
 .msg-text {
     white-space: pre-wrap;
     line-height: 1.45;
 }
+
 .placeholder,
 .placeholder-center {
     color: var(--text-muted);
     font-size: 0.93rem;
     text-align: center;
 }
+
 .placeholder-center {
     margin: auto;
 }
+
 .chat-input {
     border-top: 1px solid var(--border);
     padding: 14px 18px;
     flex-shrink: 0;
 }
+
 .chat-input input {
     width: 100%;
     background: var(--bg-hover);
@@ -236,6 +266,7 @@ body {
 .chat-body::-webkit-scrollbar {
     width: 6px;
 }
+
 .rooms::-webkit-scrollbar-thumb,
 .chat-body::-webkit-scrollbar-thumb {
     background: #555;
@@ -249,4 +280,14 @@ body {
     justify-content: center;
     align-items: center;
     color: var(--text-muted);
+}
+
+.avatar,
+.msg-avatar {
+    flex-shrink: 0;
+    width: 24px; /* 32px → 24px */
+    height: 24px; /* 32px → 24px */
+    border-radius: 50%;
+    background: var(--accent);
+    object-fit: cover;
 }

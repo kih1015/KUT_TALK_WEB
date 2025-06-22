@@ -45,9 +45,7 @@ const formatTime = (ts: number) =>
         minute: '2-digit',
         hour12: true,
     });
-
-const getSid = (): string =>
-    localStorage.getItem('KTA_SESSION_ID') ?? '';
+const getSid = (): string => localStorage.getItem('KTA_SESSION_ID') ?? '';
 
 export default function ChatPage() {
     const nav = useNavigate();
@@ -80,15 +78,43 @@ export default function ChatPage() {
     const [pubRooms, setPubRooms] = useState<PublicRoom[]>([]);
     const [roomId, setRoomId] = useState<number | null>(null);
     const roomIdRef = useRef<number | null>(null);
-    useEffect(() => { roomIdRef.current = roomId }, [roomId]);
+    useEffect(() => {
+        roomIdRef.current = roomId;
+    }, [roomId]);
 
     const loadRooms = () => {
         fetch(`${API}/chat/rooms/me`, { credentials: 'include' })
-            .then(r => r.json()).then(setMyRooms);
+            .then(r => r.json())
+            .then(setMyRooms);
         fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
-            .then(r => r.json()).then(setPubRooms);
+            .then(r => r.json())
+            .then(setPubRooms);
     };
     useEffect(loadRooms, []);
+
+    // 새 방 생성
+    const [newTitle, setNewTitle] = useState('');
+    const createRoom = (e: FormEvent) => {
+        e.preventDefault();
+        if (!newTitle.trim()) return;
+        fetch(`${API}/chat/rooms`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                room_type: 'PUBLIC',
+                title: newTitle.trim(),
+                member_ids: [],
+            }),
+        })
+            .then(r => r.json())
+            .then(({ room_id }) => {
+                loadRooms();
+                setRoomId(room_id);
+                sendWs({ type: 'join', room: room_id });
+                setNewTitle('');
+            });
+    };
 
     // — 메시지 & 무한스크롤 —
     const [messages, setMessages] = useState<Message[]>([]);
@@ -134,7 +160,7 @@ export default function ChatPage() {
         chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }, [messages]);
 
-    // 스크롤 이벤트 → 무한로드
+    // 스크롤 이벤트 → 무한 로드
     const onScroll = (e: UIEvent<HTMLDivElement>) => {
         const tgt = e.currentTarget;
         if (
@@ -190,7 +216,14 @@ export default function ChatPage() {
         }
     };
 
-    // — 방 생성 / 참가 / 나가기 / 메시지 전송 (생략) —
+    // 메시지 전송
+    const [newMsg, setNewMsg] = useState('');
+    const submitMessage = (e: FormEvent) => {
+        e.preventDefault();
+        if (!newMsg.trim() || roomId == null) return;
+        sendWs({ type: 'message', room: roomId, content: newMsg.trim() });
+        setNewMsg('');
+    };
 
     if (!ready) return <div className="loading">Loading…</div>;
 
@@ -201,10 +234,7 @@ export default function ChatPage() {
                 <div className="user-info">
                     {user ? `${user.nickname}님` : '…'}
                 </div>
-                <button
-                    className="logout-btn"
-                    onClick={handleLogout}
-                >
+                <button className="logout-btn" onClick={handleLogout}>
                     로그아웃
                 </button>
             </div>
@@ -217,9 +247,7 @@ export default function ChatPage() {
                         {myRooms.map(r => (
                             <li
                                 key={r.room_id}
-                                className={
-                                    roomId === r.room_id ? 'sel' : undefined
-                                }
+                                className={roomId === r.room_id ? 'sel' : undefined}
                                 onClick={() => {
                                     if (roomId !== r.room_id) {
                                         if (roomId != null)
@@ -231,30 +259,18 @@ export default function ChatPage() {
                             >
                                 <span className="avatar" />
                                 <span className="title">{r.title}</span>
-                                {r.unread > 0 && (
-                                    <span className="badge">{r.unread}</span>
-                                )}
+                                {r.unread > 0 && <span className="badge">{r.unread}</span>}
                                 <button
                                     className="leave"
                                     onClick={(e: MouseEvent) => {
                                         e.stopPropagation();
-                                        if (
-                                            window.confirm(
-                                                '나가시겠습니까?'
-                                            )
-                                        ) {
+                                        if (window.confirm('나가시겠습니까?')) {
                                             fetch(
                                                 `${API}/chat/rooms/${r.room_id}/member`,
-                                                {
-                                                    method: 'DELETE',
-                                                    credentials: 'include',
-                                                }
+                                                { method: 'DELETE', credentials: 'include' }
                                             ).then(() => {
                                                 if (roomId === r.room_id) {
-                                                    sendWs({
-                                                        type: 'leave',
-                                                        room: r.room_id,
-                                                    });
+                                                    sendWs({ type: 'leave', room: r.room_id });
                                                     setRoomId(null);
                                                 }
                                                 loadRooms();
@@ -267,7 +283,15 @@ export default function ChatPage() {
                             </li>
                         ))}
                     </ul>
-                    {/* 새 방 폼 생략… */}
+                    {/* 새 방 생성 폼 */}
+                    <form onSubmit={createRoom} className="new">
+                        <input
+                            placeholder="새 공개방 제목"
+                            value={newTitle}
+                            onChange={e => setNewTitle(e.target.value)}
+                        />
+                        <button>＋</button>
+                    </form>
                 </aside>
 
                 <main className="chat">
@@ -276,10 +300,7 @@ export default function ChatPage() {
                             <div className="chat-header">
                                 <h2>
                                     #{' '}
-                                    {
-                                        myRooms.find(r => r.room_id === roomId)
-                                            ?.title
-                                    }
+                                    {myRooms.find(r => r.room_id === roomId)?.title}
                                 </h2>
                             </div>
                             <div
@@ -288,9 +309,7 @@ export default function ChatPage() {
                                 onScroll={onScroll}
                             >
                                 {loadingMsg && hasMore && (
-                                    <p className="history-loading">
-                                        이전 메시지 로드 중…
-                                    </p>
+                                    <p className="history-loading">이전 메시지 로드 중…</p>
                                 )}
                                 {messages.map(m => (
                                     <div key={m.id} className="msg">
@@ -299,56 +318,37 @@ export default function ChatPage() {
                                             src={avatarUrl(m.sender)}
                                             alt=""
                                             onError={e =>
-                                                (
-                                                    e.target as HTMLImageElement
-                                                ).style.display = 'none'
+                                                ((e.target as HTMLImageElement).style.display = 'none')
                                             }
                                         />
                                         <div className="msg-body">
                                             <div className="msg-meta">
-                        <span className="nick">
-                          {m.sender_nick}
-                        </span>
+                                                <span className="nick">{m.sender_nick}</span>
                                                 <span className="time">
-                          {formatTime(
-                              m.created_at
-                          )}
+                          {formatTime(m.created_at)}
                         </span>
                                                 {m.unread_cnt > 0 && (
-                                                    <span className="unread">
-                            {m.unread_cnt}
-                          </span>
+                                                    <span className="unread">{m.unread_cnt}</span>
                                                 )}
                                             </div>
-                                            <div className="msg-text">
-                                                {m.content}
-                                            </div>
+                                            <div className="msg-text">{m.content}</div>
                                         </div>
                                     </div>
                                 ))}
                                 {!messages.length && (
-                                    <p className="placeholder">
-                                        메시지가 없습니다.
-                                    </p>
+                                    <p className="placeholder">메시지가 없습니다.</p>
                                 )}
                             </div>
-                            <form
-                                className="chat-input"
-                                onSubmit={(e: FormEvent) => {
-                                    e.preventDefault();
-                                    // send message…
-                                }}
-                            >
+                            <form className="chat-input" onSubmit={submitMessage}>
                                 <input
                                     placeholder="메시지를 입력하세요…"
-                                    // …
+                                    value={newMsg}
+                                    onChange={e => setNewMsg(e.target.value)}
                                 />
                             </form>
                         </>
                     ) : (
-                        <p className="placeholder-center">
-                            방을 선택하세요.
-                        </p>
+                        <p className="placeholder-center">방을 선택하세요.</p>
                     )}
                 </main>
 
@@ -367,17 +367,11 @@ export default function ChatPage() {
                                         onClick={() => {
                                             fetch(
                                                 `${API}/chat/rooms/${r.room_id}/join`,
-                                                {
-                                                    method: 'POST',
-                                                    credentials: 'include',
-                                                }
+                                                { method: 'POST', credentials: 'include' }
                                             ).then(() => {
                                                 loadRooms();
                                                 setRoomId(r.room_id);
-                                                sendWs({
-                                                    type: 'join',
-                                                    room: r.room_id,
-                                                });
+                                                sendWs({ type: 'join', room: r.room_id });
                                             });
                                         }}
                                     >
