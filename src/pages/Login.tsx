@@ -40,7 +40,7 @@ function Login() {
                 refresh();
                 navigate('/chat');
             } else if (res.status === 401) {
-                setError(data.error || '아이디 또는 비밀번호가 올바르지 않습니다.');
+                setError('아이디 또는 비밀번호가 올바르지 않습니다.');
             } else {
                 setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
             }
