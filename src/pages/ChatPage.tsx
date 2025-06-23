@@ -153,80 +153,81 @@ export default function ChatPage() {
     const socketRef = useRef<WebSocket | null>(null);
     const lastPongRef = useRef<number>(Date.now());
     useEffect(() => {
-        const ws = new WebSocket(WS_URL);
-        socketRef.current = ws;
-        ws.onopen = () => {
-            lastPongRef.current = Date.now();
-            sendWs({type: 'auth'});
-        };
-        ws.onmessage = e => {
-            const raw = JSON.parse(e.data);
+        let ws: WebSocket | null = null;
+        let reconnectInterval: number;
 
-            // ── updated-message: 기존 메시지의 unread_cnt 갱신
-            if (raw.type === 'updated-message') {
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === raw.id
-                            ? {...m, unread_cnt: raw.unread_cnt}
-                            : m
-                    )
-                );
-                return;
-            }
+        const connectWebSocket = () => {
+            ws = new WebSocket(WS_URL);
+            socketRef.current = ws;
 
-            // public rooms 갱신
-            if (raw.type === 'updated-chat-room') {
-                fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
-                    .then(r => r.json())
-                    .then(setPubRooms);
-                return;
-            }
-
-            // 인증 확인
-            if (raw.type === 'auth_ok') {
-                return;
-            }
-
-            // ping-pong heartbeat
-            if (raw.type === 'ping') {
-                sendWs({type: 'pong'});
+            ws.onopen = () => {
                 lastPongRef.current = Date.now();
-                return;
-            }
-            if (raw.type === 'pong') {
-                lastPongRef.current = Date.now();
-                return;
-            }
+                sendWs({ type: 'auth' });
+            };
 
-            // 새로운 메시지
-            if (raw.type === 'message' && raw.room === roomIdRef.current) {
-                const newMsg: Message = {
-                    id: raw.id,
-                    sender: raw.sender,
-                    sender_nick: raw.nick,
-                    content: raw.content,
-                    created_at: raw.ts,
-                    unread_cnt: raw.unread_cnt ?? 0,
-                };
-                setMessages(prev => [...prev, newMsg]);
-            }
-            // unread count 업데이트
-            else if (raw.type === 'unread') {
-                setMyRooms(rs =>
-                    rs.map(r =>
-                        r.room_id === raw.room
-                            ? {...r, unread: raw.count}
-                            : r
-                    )
-                );
-            }
+            ws.onmessage = e => {
+                const raw = JSON.parse(e.data);
+
+                if (raw.type === 'updated-message') {
+                    setMessages(prev =>
+                        prev.map(m =>
+                            m.id === raw.id ? { ...m, unread_cnt: raw.unread_cnt } : m
+                        )
+                    );
+                    return;
+                }
+
+                if (raw.type === 'updated-chat-room') {
+                    fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
+                        .then(r => r.json())
+                        .then(setPubRooms);
+                    return;
+                }
+
+                if (raw.type === 'auth_ok') return;
+
+                if (raw.type === 'ping' || raw.type === 'pong') {
+                    lastPongRef.current = Date.now();
+                    if (raw.type === 'ping') sendWs({ type: 'pong' });
+                    return;
+                }
+
+                if (raw.type === 'message' && raw.room === roomIdRef.current) {
+                    const newMsg: Message = {
+                        id: raw.id,
+                        sender: raw.sender,
+                        sender_nick: raw.nick,
+                        content: raw.content,
+                        created_at: raw.ts,
+                        unread_cnt: raw.unread_cnt ?? 0,
+                    };
+                    setMessages(prev => [...prev, newMsg]);
+                } else if (raw.type === 'unread') {
+                    setMyRooms(rs =>
+                        rs.map(r =>
+                            r.room_id === raw.room ? { ...r, unread: raw.count } : r
+                        )
+                    );
+                }
+            };
+
+            ws.onclose = () => {
+                reconnectInterval = window.setTimeout(connectWebSocket, 3000); // 브라우저 환경
+            };
         };
-        const interval = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN && Date.now() - lastPongRef.current > APP_PONG_TIMEOUT) ws.close();
+
+        connectWebSocket();
+
+        const interval = window.setInterval(() => {
+            if (ws?.readyState === WebSocket.OPEN && Date.now() - lastPongRef.current > APP_PONG_TIMEOUT) {
+                ws.close();
+            }
         }, APP_PONG_TIMEOUT / 2);
+
         return () => {
-            clearInterval(interval);
-            ws.close();
+            window.clearInterval(interval);
+            window.clearTimeout(reconnectInterval);
+            ws?.close();
         };
     }, []);
 
