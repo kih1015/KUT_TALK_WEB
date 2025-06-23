@@ -6,22 +6,24 @@ import './Signup.css';
 
 function Signup() {
     const navigate = useNavigate();
-    const { signup, isLoading, error } = useSignup();
+    const { signup, isLoading, error: hookError } = useSignup();
     const [form, setForm] = useState({
         userid: '',
         nickname: '',
         password: '',
     });
+    const [error, setError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setError(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const { userid, nickname, password } = form;
         if (!userid || !nickname || !password) {
-            alert('모든 필드를 채워주세요.');
+            setError('모든 필드를 채워주세요.');
             return;
         }
 
@@ -29,9 +31,14 @@ function Signup() {
             await signup({ userid, nickname, password });
             alert('회원가입 성공! 로그인 페이지로 이동합니다.');
             navigate('/');
-        } catch {
-            // error 메시지는 hook 내부에서 설정됨
-            // 필요 시 추가 로직 가능
+        } catch (err: any) {
+            // 409: 아이디 또는 닉네임 중복
+            if (err.response?.status === 409) {
+                setError('이미 사용 중인 아이디 또는 닉네임입니다.');
+            } else {
+                // hook 내부에서 설정된 메시지 또는 기타 에러
+                setError(hookError || '회원가입에 실패했습니다.');
+            }
         }
     };
 
