@@ -1,5 +1,5 @@
-import { type FormEvent, type UIEvent, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {type FormEvent, type UIEvent, useEffect, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import './ChatPage.css';
 import TopBar from '../components/TopBar';
 import RoomList from '../components/RoomList';
@@ -46,7 +46,7 @@ export default function ChatPage() {
 
     // 로그인 & 내 정보 로드
     useEffect(() => {
-        fetch(`${API}/users/me`, { credentials: 'include' })
+        fetch(`${API}/users/me`, {credentials: 'include'})
             .then(r => (r.status === 401 ? null : r.json()))
             .then(d => {
                 if (!d) nav('/login'); else setUser(d);
@@ -55,7 +55,7 @@ export default function ChatPage() {
     }, [nav]);
 
     const handleLogout = () => {
-        fetch(`${API}/users/logout`, { method: 'POST', credentials: 'include' })
+        fetch(`${API}/users/logout`, {method: 'POST', credentials: 'include'})
             .finally(() => {
                 localStorage.removeItem('KTA_SESSION_ID');
                 nav('/login');
@@ -72,8 +72,8 @@ export default function ChatPage() {
     }, [roomId]);
 
     const loadRooms = () => {
-        fetch(`${API}/chat/rooms/me`, { credentials: 'include' }).then(r => r.json()).then(setMyRooms);
-        fetch(`${API}/chat/rooms/public`, { credentials: 'include' }).then(r => r.json()).then(setPubRooms);
+        fetch(`${API}/chat/rooms/me`, {credentials: 'include'}).then(r => r.json()).then(setMyRooms);
+        fetch(`${API}/chat/rooms/public`, {credentials: 'include'}).then(r => r.json()).then(setPubRooms);
     };
     useEffect(loadRooms, []);
 
@@ -81,28 +81,28 @@ export default function ChatPage() {
         fetch(`${API}/chat/rooms`, {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ room_type: 'PUBLIC', title, member_ids: [] }),
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({room_type: 'PUBLIC', title, member_ids: []}),
         })
             .then(r => r.json())
-            .then(({ room_id }) => {
+            .then(({room_id}) => {
                 loadRooms();
                 setRoomId(room_id);
-                setMyRooms(rs => rs.map(r => r.room_id === room_id ? { ...r, unread: 0 } : r));
-                sendWs({ type: 'join', room: room_id });
-                sendWs({ type: 'update-chat-room' });
+                setMyRooms(rs => rs.map(r => r.room_id === room_id ? {...r, unread: 0} : r));
+                sendWs({type: 'join', room: room_id});
+                sendWs({type: 'update-chat-room'});
             });
     };
 
     const leaveRoom = (id: number) => {
-        fetch(`${API}/chat/rooms/${id}/member`, { method: 'DELETE', credentials: 'include' })
+        fetch(`${API}/chat/rooms/${id}/member`, {method: 'DELETE', credentials: 'include'})
             .then(() => {
                 if (roomId === id) {
-                    sendWs({ type: 'leave', room: id });
+                    sendWs({type: 'leave', room: id});
                     setRoomId(null);
                 }
                 loadRooms();
-                sendWs({ type: 'update-chat-room' });
+                sendWs({type: 'update-chat-room'});
             });
     };
 
@@ -115,18 +115,15 @@ export default function ChatPage() {
 
     const fetchMessages = (room: number, pageNo: number) => {
         setLoadingMsg(true);
-        fetch(`${API}/chat/rooms/${room}/messages?page=${pageNo}&limit=${PAGE_SIZE}`, { credentials: 'include' })
+        fetch(`${API}/chat/rooms/${room}/messages?page=${pageNo}&limit=${PAGE_SIZE}`, {credentials: 'include'})
             .then(r => r.json())
             .then((data: Message[]) => {
-                setMessages(prev =>
-                    pageNo === FIRST_PAGE
-                        ? [...data.reverse()]
-                        : [...data.reverse(), ...prev]
+                setMessages(prev => pageNo === FIRST_PAGE
+                    ? [...data.reverse()]
+                    : [...data.reverse(), ...prev]
                 );
                 setHasMore(data.length === PAGE_SIZE);
                 setPage(pageNo);
-
-                // 첫 페이지일 때만 최하단으로 스크롤
                 if (chatBodyRef.current && pageNo === FIRST_PAGE) {
                     chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
                 }
@@ -141,6 +138,11 @@ export default function ChatPage() {
         setHasMore(true);
         fetchMessages(roomId, FIRST_PAGE);
     }, [roomId]);
+
+    useEffect(() => {
+        if (!chatBodyRef.current) return;
+        chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }, [messages]);
 
     const onScroll = (e: UIEvent<HTMLDivElement>) => {
         const tgt = e.currentTarget;
@@ -157,31 +159,39 @@ export default function ChatPage() {
         socketRef.current = ws;
         ws.onopen = () => {
             lastPongRef.current = Date.now();
-            sendWs({ type: 'auth' });
+            sendWs({type: 'auth'});
         };
         ws.onmessage = e => {
             const raw = JSON.parse(e.data);
 
+            // ── updated-message: 기존 메시지의 unread_cnt 갱신
             if (raw.type === 'updated-message') {
                 setMessages(prev =>
                     prev.map(m =>
-                        m.id === raw.id ? { ...m, unread_cnt: raw.unread_cnt } : m
+                        m.id === raw.id
+                            ? {...m, unread_cnt: raw.unread_cnt}
+                            : m
                     )
                 );
                 return;
             }
 
+            // public rooms 갱신
             if (raw.type === 'updated-chat-room') {
-                fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
+                fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
                     .then(r => r.json())
                     .then(setPubRooms);
                 return;
             }
 
-            if (raw.type === 'auth_ok') return;
+            // 인증 확인
+            if (raw.type === 'auth_ok') {
+                return;
+            }
 
+            // ping-pong heartbeat
             if (raw.type === 'ping') {
-                sendWs({ type: 'pong' });
+                sendWs({type: 'pong'});
                 lastPongRef.current = Date.now();
                 return;
             }
@@ -190,6 +200,7 @@ export default function ChatPage() {
                 return;
             }
 
+            // 새로운 메시지
             if (raw.type === 'message' && raw.room === roomIdRef.current) {
                 const newMsg: Message = {
                     id: raw.id,
@@ -200,10 +211,14 @@ export default function ChatPage() {
                     unread_cnt: raw.unread_cnt ?? 0,
                 };
                 setMessages(prev => [...prev, newMsg]);
-            } else if (raw.type === 'unread') {
+            }
+            // unread count 업데이트
+            else if (raw.type === 'unread') {
                 setMyRooms(rs =>
                     rs.map(r =>
-                        r.room_id === raw.room ? { ...r, unread: raw.count } : r
+                        r.room_id === raw.room
+                            ? {...r, unread: raw.count}
+                            : r
                     )
                 );
             }
@@ -219,7 +234,7 @@ export default function ChatPage() {
 
     const sendWs = (obj: object) => {
         const ws = socketRef.current;
-        if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ ...obj, sid: getSid() }));
+        if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({...obj, sid: getSid()}));
     };
 
     // 새 메시지 전송
@@ -227,7 +242,7 @@ export default function ChatPage() {
     const submitMessage = (e: FormEvent) => {
         e.preventDefault();
         if (!newMsg.trim() || roomId == null) return;
-        sendWs({ type: 'message', room: roomId, content: newMsg.trim() });
+        sendWs({type: 'message', room: roomId, content: newMsg.trim()});
         setNewMsg('');
     };
 
@@ -235,62 +250,42 @@ export default function ChatPage() {
 
     return (
         <>
-            <TopBar user={user} onLogout={handleLogout} />
+            <TopBar user={user} onLogout={handleLogout}/>
             <div className="layout">
                 <aside className="panel left">
                     <header>내 채팅방</header>
-
-                    <RoomList
-                        rooms={myRooms}
-                        selectedId={roomId}
-                        onSelect={id => {
-                            if (roomId !== id) {
-                                if (roomId != null) sendWs({ type: 'leave', room: roomId });
-                                setRoomId(id);
-                                setMyRooms(rs => rs.map(r => r.room_id === id ? { ...r, unread: 0 } : r));
-                                sendWs({ type: 'join', room: id });
-                            }
-                        }}
-                        onLeave={leaveRoom}
-                    />
-
-                    <NewRoomForm onCreate={createRoom} />
+                    <RoomList rooms={myRooms} selectedId={roomId} onSelect={id => {
+                        if (roomId !== id) {
+                            if (roomId != null) sendWs({type: 'leave', room: roomId});
+                            setRoomId(id);
+                            setMyRooms(rs => rs.map(r => r.room_id === id ? {...r, unread: 0} : r));
+                            sendWs({type: 'join', room: id});
+                        }
+                    }} onLeave={leaveRoom}/>
+                    <NewRoomForm onCreate={createRoom}/>
                 </aside>
-
                 <main className="chat">
                     {roomId != null ? (
                         <>
-                            <ChatHeader title={myRooms.find(r => r.room_id === roomId)?.title || ''} />
-                            <ChatBody
-                                messages={messages}
-                                loading={loadingMsg}
-                                hasMore={hasMore}
-                                onScroll={onScroll}
-                                ref={chatBodyRef}
-                            />
-                            <ChatInput value={newMsg} onChange={setNewMsg} onSubmit={submitMessage} />
+                            <ChatHeader title={myRooms.find(r => r.room_id === roomId)?.title || ''}/>
+                            <ChatBody messages={messages} loading={loadingMsg} hasMore={hasMore} onScroll={onScroll}/>
+                            <ChatInput value={newMsg} onChange={setNewMsg} onSubmit={submitMessage}/>
                         </>
                     ) : (
                         <p className="placeholder-center">방을 선택하세요.</p>
                     )}
                 </main>
-
                 <aside className="panel right">
                     <header>공개 채팅방</header>
-
-                    <PublicRoomList
-                        rooms={pubRooms}
-                        onJoin={id => {
-                            fetch(`${API}/chat/rooms/${id}/join`, { method: 'POST', credentials: 'include' })
-                                .then(() => {
-                                    loadRooms();
-                                    setRoomId(id);
-                                    sendWs({ type: 'join', room: id });
-                                    sendWs({ type: 'update-chat-room' });
-                                });
-                        }}
-                        myRooms={myRooms}
-                    />
+                    <PublicRoomList rooms={pubRooms} onJoin={id => {
+                        fetch(`${API}/chat/rooms/${id}/join`, {method: 'POST', credentials: 'include'})
+                            .then(() => {
+                                loadRooms();
+                                setRoomId(id);
+                                sendWs({type: 'join', room: id});
+                                sendWs({type: 'update-chat-room'});
+                            });
+                    }} myRooms={myRooms}/>
                 </aside>
             </div>
         </>
