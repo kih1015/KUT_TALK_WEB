@@ -16,7 +16,7 @@ interface RoomListProps {
 
 // avatarUrl 유틸을 가져오거나 복사하세요
 const avatarUrl = (id: number) =>
-    `https://api.dicebear.com/6.x/identicon/svg?seed=${id}`;
+    `https://api.dicebear.com/6.x/identicon/svg?seed=public-room-${id}`;
 
 export default function RoomList({
                                      rooms,
