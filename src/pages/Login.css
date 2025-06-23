@@ -2,16 +2,17 @@
     width: 100%;
     max-width: 400px;
     padding: 2rem;
-    background-color: #ffffff;
-    border: 1px solid #f97316;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     text-align: center;
+    color: var(--text);
 }
 
 .login-wrapper h2 {
     margin-bottom: 1.5rem;
-    color: #1f2937;
+    color: var(--text);
 }
 
 .login-form {
@@ -23,48 +24,53 @@
 .login-form input {
     padding: 0.75rem;
     font-size: 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    background-color: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.login-form input::placeholder {
+    color: var(--text-muted);
 }
 
 .login-btn {
     padding: 0.75rem;
     font-size: 1rem;
     font-weight: bold;
-    background-color: #f97316;
+    background-color: var(--accent);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius);
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
 .login-btn:hover {
-    background-color: #ea580c;
+    background-color: var(--accent-light);
 }
 
 .signup-btn {
     margin-top: 1rem;
     background: none;
     border: none;
-    color: #f97316;
+    color: var(--accent);
     font-weight: bold;
     cursor: pointer;
     text-decoration: underline;
 }
 
-/* 공통: 하단 링크 */
+/* 하단 링크 공통 */
 .login-form + p,
 .signup-form + p {
     margin-top: 1rem;
     font-size: 0.9rem;
-    color: #1f2937;
+    color: var(--text);
 }
 
 a.signup-link,
 a.login-link {
-    color: #f97316;
+    color: var(--accent);
     font-weight: bold;
     text-decoration: underline;
 }

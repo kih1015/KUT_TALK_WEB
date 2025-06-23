@@ -1,71 +1,104 @@
-/* Signup 전용 wrapper */
-.signup-wrapper {
+/* 공통 버튼 스타일 */
+.btn-accent {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.btn-accent:hover {
+    background-color: var(--accent-light);
+}
+
+/* 공통 링크 스타일 */
+.link-accent {
+    color: var(--accent);
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* 입력 필드 공통 */
+.form-input {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+.form-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* 공통 wrapper */
+.auth-wrapper {
     width: 100%;
     max-width: 400px;
-    background-color: #ffffff;
-    border: 1px solid #f97316;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     padding: 2rem;
     text-align: center;
+    color: var(--text);
 }
 
 /* 제목 */
-.signup-wrapper h2 {
+.auth-wrapper h2 {
     margin-bottom: 1.5rem;
-    color: #1f2937;
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
-/* 입력 폼 */
+/* 로그인 전용 */
+.login-wrapper {
+    composes: auth-wrapper;
+}
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.login-form input {
+    composes: form-input;
+}
+.login-btn {
+    composes: btn-accent;
+}
+.signup-redirect {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+.signup-redirect .signup-link {
+    composes: link-accent;
+}
+
+/* 회원가입 전용 */
+.signup-wrapper {
+    composes: auth-wrapper;
+}
 .signup-form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
-
 .signup-form input {
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    background-color: #f9fafb;
-    color: #1f2937;           /* 추가: 입력 텍스트 색상 */
+    composes: form-input;
 }
-
-/* placeholder 색상도 조정하고 싶다면 */
-.signup-form input::placeholder {
-    color: #9ca3af;           /* 연한 회색으로 예시 */
-}
-
-
-/* 가입하기 버튼 */
 .signup-btn {
-    padding: 0.75rem;
-    font-size: 1rem;
-    font-weight: bold;
-    background-color: #f97316;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    composes: btn-accent;
 }
-
-.signup-btn:hover {
-    background-color: #ea580c;
-}
-
-/* 공통: 하단 링크 */
-.login-form + p,
-.signup-form + p {
+.login-redirect {
     margin-top: 1rem;
     font-size: 0.9rem;
-    color: #1f2937;
+    color: var(--text);
 }
-
-a.signup-link,
-a.login-link {
-    color: #f97316;
-    font-weight: bold;
-    text-decoration: underline;
+.login-redirect .login-link {
+    composes: link-accent;
 }
