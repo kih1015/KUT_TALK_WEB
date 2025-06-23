@@ -3,7 +3,6 @@ interface PublicRoom {
     title: string;
     member_cnt: number;
 }
-
 interface MyRoomRef {
     room_id: number;
 }
@@ -14,16 +13,15 @@ interface PublicRoomListProps {
     myRooms: MyRoomRef[];
 }
 
-export default function PublicRoomList({rooms, onJoin, myRooms}: PublicRoomListProps) {
+export default function PublicRoomList({ rooms, onJoin, myRooms }: PublicRoomListProps) {
     return (
         <ul className="rooms">
             {rooms.map(r => (
-                <li key={r.room_id}>
-                    <span className="avatar"/>
-                    <span className="title">
-            {r.title} <small>({r.member_cnt})</small>
-          </span>
-                    {!myRooms.find(m => m.room_id === r.room_id) && (
+                <li key={r.room_id} className="room-item">
+                    <span className="avatar" />
+                    <span className="title">{r.title}</span>
+                    <span className="join-count">{r.member_cnt}</span>
+                    {!myRooms.some(m => m.room_id === r.room_id) && (
                         <button className="join" onClick={() => onJoin(r.room_id)}>
                             참가
                         </button>
