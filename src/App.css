@@ -1,11 +1,13 @@
-/* 1) html, body, root 전역 초기화 */
+/* 1) html, body, #root 전역 초기화 */
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #fff7ed; /* 연한 주황 배경 */
-  font-family: 'Arial', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text);
+  font-family: 'Pretendard', 'Segoe UI', sans-serif;
+  overflow: hidden; /* 필요 시 전체 스크롤 제거 */
 }
 
 /* 2) 뷰포트 전체를 flex 컨테이너로 */
@@ -14,6 +16,6 @@ html, body, #root {
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 100vh;            /* 뷰포트 높이만큼 차지 */
-  background-color: inherit; /* 상위와 같은 배경 */
+  height: 100vh;
+  background-color: inherit; /* 상위와 같은 다크 배경 */
 }
