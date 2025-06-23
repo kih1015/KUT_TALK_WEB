@@ -95,17 +95,15 @@ export default function ChatPage() {
     };
 
     const leaveRoom = (id: number) => {
-        if (window.confirm('나가시겠습니까?')) {
-            fetch(`${API}/chat/rooms/${id}/member`, {method: 'DELETE', credentials: 'include'})
-                .then(() => {
-                    if (roomId === id) {
-                        sendWs({type: 'leave', room: id});
-                        setRoomId(null);
-                    }
-                    loadRooms();
-                    sendWs({type: 'update-chat-room'});
-                });
-        }
+        fetch(`${API}/chat/rooms/${id}/member`, {method: 'DELETE', credentials: 'include'})
+            .then(() => {
+                if (roomId === id) {
+                    sendWs({type: 'leave', room: id});
+                    setRoomId(null);
+                }
+                loadRooms();
+                sendWs({type: 'update-chat-room'});
+            });
     };
 
     // 메시지 및 페이지네이션
@@ -169,7 +167,7 @@ export default function ChatPage() {
                 setMessages(prev =>
                     prev.map(m =>
                         m.id === raw.id
-                            ? { ...m, unread_cnt: raw.unread_cnt }
+                            ? {...m, unread_cnt: raw.unread_cnt}
                             : m
                     )
                 );
@@ -178,7 +176,7 @@ export default function ChatPage() {
 
             // public rooms 갱신
             if (raw.type === 'updated-chat-room') {
-                fetch(`${API}/chat/rooms/public`, { credentials: 'include' })
+                fetch(`${API}/chat/rooms/public`, {credentials: 'include'})
                     .then(r => r.json())
                     .then(setPubRooms);
                 return;
@@ -191,7 +189,7 @@ export default function ChatPage() {
 
             // ping-pong heartbeat
             if (raw.type === 'ping') {
-                sendWs({ type: 'pong' });
+                sendWs({type: 'pong'});
                 lastPongRef.current = Date.now();
                 return;
             }
@@ -217,7 +215,7 @@ export default function ChatPage() {
                 setMyRooms(rs =>
                     rs.map(r =>
                         r.room_id === raw.room
-                            ? { ...r, unread: raw.count }
+                            ? {...r, unread: raw.count}
                             : r
                     )
                 );
