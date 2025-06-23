@@ -1,4 +1,4 @@
-import {type UIEvent, useRef} from 'react';
+import {type UIEvent, useEffect, useRef} from 'react';
 
 interface Message {
     id: number;
@@ -23,6 +23,13 @@ const formatTime = (ts: number) => new Date(ts * 1000).toLocaleString('ko-KR', {
 
 export default function ChatBody({messages, loading, hasMore, onScroll}: ChatBodyProps) {
     const ref = useRef<HTMLDivElement>(null);
+
+    // 새 메시지나 페이징 이후 스크롤 최하단으로 이동
+    useEffect(() => {
+        if (!ref.current) return;
+        ref.current.scrollTop = ref.current.scrollHeight;
+    }, [messages]);
+
     return (
         <div className="chat-body" ref={ref} onScroll={onScroll}>
             {loading && hasMore && <p className="history-loading">이전 메시지 로드 중…</p>}
