@@ -1,28 +1,30 @@
-/* 공통 버튼 스타일 */
-.btn-accent {
-    background-color: var(--accent);
-    color: white;
-    border: none;
+/* 회원가입 전용 wrapper */
+.signup-wrapper {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 0.75rem;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-.btn-accent:hover {
-    background-color: var(--accent-light);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: var(--text);
 }
 
-/* 공통 링크 스타일 */
-.link-accent {
-    color: var(--accent);
-    font-weight: bold;
-    text-decoration: underline;
+/* 제목 */
+.signup-wrapper h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text);
 }
 
-/* 입력 필드 공통 */
-.form-input {
+/* 입력 폼 */
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.signup-form input {
     padding: 0.75rem;
     font-size: 1rem;
     border: 1px solid var(--border);
@@ -30,75 +32,38 @@
     background-color: var(--bg-hover);
     color: var(--text);
 }
-.form-input::placeholder {
+
+/* placeholder 색상 */
+.signup-form input::placeholder {
     color: var(--text-muted);
 }
 
-/* 공통 wrapper */
-.auth-wrapper {
-    width: 100%;
-    max-width: 400px;
-    background-color: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    padding: 2rem;
-    text-align: center;
-    color: var(--text);
-}
-
-/* 제목 */
-.auth-wrapper h2 {
-    margin-bottom: 1.5rem;
-    color: var(--text);
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-/* 로그인 전용 */
-.login-wrapper {
-    composes: auth-wrapper;
-}
-.login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-.login-form input {
-    composes: form-input;
-}
-.login-btn {
-    composes: btn-accent;
-}
-.signup-redirect {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: var(--text);
-}
-.signup-redirect .signup-link {
-    composes: link-accent;
-}
-
-/* 회원가입 전용 */
-.signup-wrapper {
-    composes: auth-wrapper;
-}
-.signup-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-.signup-form input {
-    composes: form-input;
-}
+/* 가입하기 버튼 */
 .signup-btn {
-    composes: btn-accent;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
-.login-redirect {
+
+.signup-btn:hover {
+    background-color: var(--accent-light);
+}
+
+/* 하단 링크 */
+.signup-form + p {
     margin-top: 1rem;
     font-size: 0.9rem;
     color: var(--text);
 }
-.login-redirect .login-link {
-    composes: link-accent;
+
+a.login-link {
+    color: var(--accent);
+    font-weight: bold;
+    text-decoration: underline;
 }
