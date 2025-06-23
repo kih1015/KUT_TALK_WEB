@@ -118,7 +118,10 @@ export default function ChatPage() {
         fetch(`${API}/chat/rooms/${room}/messages?page=${pageNo}&limit=${PAGE_SIZE}`, {credentials: 'include'})
             .then(r => r.json())
             .then((data: Message[]) => {
-                setMessages(prev => [...data.reverse(), ...prev]);
+                setMessages(prev => pageNo === FIRST_PAGE
+                    ? [...data.reverse()]
+                    : [...data.reverse(), ...prev]
+                );
                 setHasMore(data.length === PAGE_SIZE);
                 setPage(pageNo);
                 if (chatBodyRef.current && pageNo === FIRST_PAGE) {
