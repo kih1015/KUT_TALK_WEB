@@ -3,9 +3,13 @@ interface PublicRoom {
     title: string;
     member_cnt: number;
 }
+
 interface MyRoomRef {
     room_id: number;
 }
+
+const avatarUrl = (id: number) =>
+    `https://api.dicebear.com/6.x/identicon/svg?seed=public-room-${id}`;
 
 interface PublicRoomListProps {
     rooms: PublicRoom[];
@@ -13,12 +17,13 @@ interface PublicRoomListProps {
     myRooms: MyRoomRef[];
 }
 
-export default function PublicRoomList({ rooms, onJoin, myRooms }: PublicRoomListProps) {
+export default function PublicRoomList({rooms, onJoin, myRooms}: PublicRoomListProps) {
     return (
         <ul className="rooms">
             {rooms.map(r => (
                 <li key={r.room_id} className="room-item">
-                    <span className="avatar" />
+                    {/* span.avatar 대신 img.avatar */}
+                    <img className="avatar" src={avatarUrl(r.room_id)} alt={`${r.title} avatar`}/>
                     <span className="title">{r.title}</span>
                     <span className="join-count">{r.member_cnt}</span>
                     {!myRooms.some(m => m.room_id === r.room_id) && (
