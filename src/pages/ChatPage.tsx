@@ -121,9 +121,8 @@ export default function ChatPage() {
                 setMessages(prev => [...data.reverse(), ...prev]);
                 setHasMore(data.length === PAGE_SIZE);
                 setPage(pageNo);
-                if (chatBodyRef.current && pageNo > FIRST_PAGE) {
-                    const diff = chatBodyRef.current.scrollHeight - chatBodyRef.current.clientHeight;
-                    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight - diff;
+                if (chatBodyRef.current && pageNo === FIRST_PAGE) {
+                    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
                 }
             })
             .finally(() => setLoadingMsg(false));
